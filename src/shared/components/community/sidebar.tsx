@@ -26,7 +26,7 @@ import { CommunityForm } from "../community/community-form";
 import { CommunityLink } from "../community/community-link";
 import { PersonListing } from "../person/person-listing";
 import { UserFlairModal } from "./user-flair-modal";
-import { UserFlairType, getUserFlair } from "@utils/helpers/user-flair-type";
+import { UserFlairType, getUserFlair, getUserFlairList } from "@utils/helpers/user-flair-type";
 import { UserFlair } from "../common/user-flair";
 
 interface SidebarProps {
@@ -62,6 +62,7 @@ interface SidebarState {
   followCommunityLoading: boolean;
   purgeCommunityLoading: boolean;
   userFlair: UserFlairType | null;
+  communityUserFlairList: UserFlairType[];
 }
 
 export class Sidebar extends Component<SidebarProps, SidebarState> {
@@ -75,7 +76,8 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
     leaveModTeamLoading: false,
     followCommunityLoading: false,
     purgeCommunityLoading: false,
-    userFlair: getUserFlair(UserService.Instance.myUserInfo?.local_user_view.person ?? null)
+    userFlair: getUserFlair(UserService.Instance.myUserInfo?.local_user_view.person ?? null),
+    communityUserFlairList: getUserFlairList(this.props.community_view.community),
   };
 
   constructor(props: any, context: any) {
@@ -86,7 +88,7 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
   handleUserFlairUpdate = (newUserFlair: UserFlairType | null) => {
     this.setState({ userFlair: newUserFlair });
   }
-  
+
   componentWillReceiveProps(
     nextProps: Readonly<{ children?: InfernoNode } & SidebarProps>,
   ): void {
@@ -105,12 +107,12 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
         removeCommunityLoading: false,
         leaveModTeamLoading: false,
         followCommunityLoading: false,
-        purgeCommunityLoading: false,        
+        purgeCommunityLoading: false,
       });
     }
   }
 
-  userFlairModalRef:UserFlairModal | null  = null;
+  userFlairModalRef: UserFlairModal | null = null;
   onPickUserFlairClick = () => {
     this.userFlairModalRef?.showDialog();
   }
@@ -118,7 +120,7 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
   render() {
     return (
       <div className="community-sidebar">
-        <UserFlairModal ref={el => this.userFlairModalRef = el} userFlair={this.state.userFlair} onUserFlairUpdate={this.handleUserFlairUpdate}/>
+        <UserFlairModal ref={el => this.userFlairModalRef = el} userFlair={this.state.userFlair} onUserFlairUpdate={this.handleUserFlairUpdate} flairList={this.state.communityUserFlairList} />
         {!this.state.showEdit ? (
           this.sidebar()
         ) : (
@@ -164,37 +166,40 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
               )}
             </div>
           </section>
-          {myUSerInfo && (
+
+          {/* User flair picker */}
+          {(myUSerInfo && this.state.communityUserFlairList.length > 0) && (
             <section id="userFlairPicker" className="card border-secondary mb-3">
               <div className="card-body">
-              <h5 class="card-title">User Flair</h5>
-              {this.state.userFlair != null ? (
-              <span>
-                <h6 class="card-subtitle text-muted">This is your flair for {this.props.community_view.community.title}:</h6>
-                <div class="my-2">
-                <UserFlair
-                  userFlair={this.state.userFlair}
-                  classNames="fs-6"
-                  imageSize="1.5rem"
-                />
-                </div>
-                <div class="mt-3 w-100 d-flex align-items-center justify-content-center">
-                  <button class="btn btn-secondary btn-block d-block mb-2 w-100" onClick={this.onPickUserFlairClick}>Change your flair</button>
-                </div>
-              </span>
-              
-              ) : (
-                <span>
-                  <h6 class="card-subtitle text-muted">You don't have a flair on {this.props.community_view.community.title}</h6>
-                  <div class="mt-4 w-100 d-flex align-items-center justify-content-center">
-                    <button class="btn btn-secondary btn-block d-block mb-2 w-100" onClick={this.onPickUserFlairClick}>Pick your flair</button>
-                  </div>
-                </span>
-              )}
+                <h5 class="card-title">User Flair</h5>
+                {this.state.userFlair != null ? (
+                  <span>
+                    <h6 class="card-subtitle text-muted">This is your flair for {this.props.community_view.community.title}:</h6>
+                    <div class="my-2">
+                      <UserFlair
+                        userFlair={this.state.userFlair}
+                        classNames="fs-6"
+                        imageSize="1.5rem"
+                      />
+                    </div>
+                    <div class="mt-3 w-100 d-flex align-items-center justify-content-center">
+                      <button class="btn btn-secondary btn-block d-block mb-2 w-100" onClick={this.onPickUserFlairClick}>Change your flair</button>
+                    </div>
+                  </span>
 
-              </div>    
+                ) : (
+                  <span>
+                    <h6 class="card-subtitle text-muted">You don't have a flair on {this.props.community_view.community.title}</h6>
+                    <div class="mt-4 w-100 d-flex align-items-center justify-content-center">
+                      <button class="btn btn-secondary btn-block d-block mb-2 w-100" onClick={this.onPickUserFlairClick}>Pick your flair</button>
+                    </div>
+                  </span>
+                )}
+
+              </div>
             </section>
           )}
+
           <section id="sidebarInfo" className="card border-secondary mb-3">
             <div className="card-body">
               {this.description()}
@@ -266,9 +271,8 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
     const cv = this.props.community_view;
     return (
       <Link
-        className={`btn btn-secondary d-block mb-2 w-100 ${
-          cv.community.deleted || cv.community.removed ? "no-click" : ""
-        }`}
+        className={`btn btn-secondary d-block mb-2 w-100 ${cv.community.deleted || cv.community.removed ? "no-click" : ""
+          }`}
         to={`/create_post?communityId=${cv.community.id}`}
       >
         {I18NextService.i18n.t("create_a_post")}
@@ -431,9 +435,8 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
                     ) : (
                       <Icon
                         icon="trash"
-                        classes={`icon-inline ${
-                          community_view.community.deleted && "text-danger"
-                        }`}
+                        classes={`icon-inline ${community_view.community.deleted && "text-danger"
+                          }`}
                       />
                     )}{" "}
                   </button>
