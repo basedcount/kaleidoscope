@@ -866,18 +866,18 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
                                     aria-label={
                                       isAdmin_
                                         ? I18NextService.i18n.t(
-                                          "remove_as_admin",
-                                        )
+                                            "remove_as_admin",
+                                          )
                                         : I18NextService.i18n.t(
-                                          "appoint_as_admin",
-                                        )
+                                            "appoint_as_admin",
+                                          )
                                     }
                                   >
                                     {isAdmin_
                                       ? I18NextService.i18n.t("remove_as_admin")
                                       : I18NextService.i18n.t(
-                                        "appoint_as_admin",
-                                      )}
+                                          "appoint_as_admin",
+                                        )}
                                   </button>
                                 ) : (
                                   <>
