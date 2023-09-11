@@ -1,77 +1,70 @@
-import { Person, Community } from "lemmy-js-client";
+import { Person, Community, CommunityModeratorView } from "lemmy-js-client";
 
 export interface UserFlairType {
-  id: string;
-  name: string;
-  image: string;
+  name: string;               //Flair internal name (used for config purposes, eg: mod view)
+  displayed_name: string;     //Flair displayed name (visible on the website)
+  path?: string;              //Flair image, if present
+  community_actor_id: string; //Community where the flair exists
+  mod_only: boolean;           //Not gonna be available on release. If true, only mod will be able to select such a flair
 }
 
-let currentFlair: UserFlairType | null = { id: "1", name: "AuthCenter", image: 'https://emoji.redditmedia.com/16q94zxonar31_t5_3ipa1/auth' };
+export async function getUserFlair(user: Person | undefined, community: Community): Promise<UserFlairType | null> {
+  console.log(`getUserFlair(${user === undefined ? undefined : user.actor_id} ${community.actor_id})`);
+  
+  if (user === undefined) return null;
 
-export function getUserFlair(user: Person | null): UserFlairType | null {
-  if (user === null) return null;
+  const res = await fetch(`http://localhost:6969/api/v1/user?id=${user.actor_id}&community=${community.actor_id}`);
 
-  if (user.name === 'Nerd02') return currentFlair;
-
-  return null;
+  return res.json() as Promise<UserFlairType>;
 }
 
-export function getUserFlairList(community: Community): UserFlairType[] {
-  if (!community.local) return []
+export async function setUserFlair(user: Person, community: Community, newUserFlair: UserFlairType) {
+  console.log(`getUserFlair(${user.actor_id} ${community.actor_id} ${newUserFlair.toString()})`);
 
-  if (community.name === 'play') return [{
-    "id": "0",
-    "name": "AuthLeft",
-    "image": "https://emoji.redditmedia.com/tusmt4eqnar31_t5_3ipa1/authleft"
-  }, {
-    "id": "1",
-    "name": "AuthCenter",
-    "image": "https://emoji.redditmedia.com/16q94zxonar31_t5_3ipa1/auth"
-  }, {
-    "id": "2",
-    "name": "AuthRight",
-    "image": "https://emoji.redditmedia.com/4ak3jtrrnar31_t5_3ipa1/authright"
-  }, {
-    "id": "3",
-    "name": "Left",
-    "image": "https://emoji.redditmedia.com/w977vwiynar31_t5_3ipa1/left"
-  }, {
-    "id": "4",
-    "name": "Centrist",
-    "image": "https://emoji.redditmedia.com/6zhv8hgvoar31_t5_3ipa1/centrist"
-  }, {
-    "id": "5",
-    "name": "Right",
-    "image": "https://emoji.redditmedia.com/x5otkjy5oar31_t5_3ipa1/right"
-  }, {
-    "id": "6",
-    "name": "LibLeft",
-    "image": "https://emoji.redditmedia.com/d4hfiki0oar31_t5_3ipa1/libleft"
-  }, {
-    "id": "7",
-    "name": "LibCenter",
-    "image": "https://emoji.redditmedia.com/s03ozdmznar31_t5_3ipa1/lib"
-  }, {
-    "id": "8",
-    "name": "LibRight",
-    "image": "https://emoji.redditmedia.com/hts92712oar31_t5_3ipa1/libright"
-  }, {
-    "id": "9",
-    "name": "Centrist",
-    "image": "https://emoji.redditmedia.com/bxv3jzc85q851_t5_3ipa1/CENTG"
-  }, {
-    "id": "10",
-    "name": "LibRight",
-    "image": "https://emoji.redditmedia.com/9usjafiot7t31_t5_3ipa1/libright2"
-  }];
-
-  return [];
+  await fetch("http://localhost:6969/api/v1/user", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_actor_id: user.actor_id,
+      community_actor_id: community.actor_id,
+      flair: newUserFlair.name
+    })
+  })
 }
 
-export function setUserFlair(newUserFlair: UserFlairType) {
-  currentFlair = newUserFlair;
+export async function clearUserFlair(user: Person, community: Community) {
+  console.log(`getUserFlair(${user.actor_id.toString()} ${community.actor_id.toString()})`);
+
+  await fetch("http://localhost:6969/api/v1/user", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_actor_id: user.actor_id,
+      community_actor_id: community.actor_id,
+    })
+  })
 }
 
-export function clearUserFlair() {
-  currentFlair = null;
+export async function getUserFlairList(requester: Person | undefined, moderators: CommunityModeratorView[], community: Community): Promise<UserFlairType[]> {
+  console.log(`getUserFlair(${requester === undefined ? undefined : requester.actor_id} ${moderators.toString()} ${community.actor_id})`);
+
+  let modOnly = false;
+  
+  if (requester !== undefined) {
+    for (const entry of moderators) {
+      if (entry.moderator.id === requester.id) {
+        modOnly = true;
+        break;
+      }
+    }
+  }
+
+  const res = await fetch(`http://localhost:6969/api/v1/community?id=${community.actor_id}&mod_only=${modOnly}`);
+
+  return res.json() as Promise<UserFlairType[]>;
 }
+

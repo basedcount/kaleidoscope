@@ -70,7 +70,7 @@ import { CommentForm } from "./comment-form";
 import { CommentNodes } from "./comment-nodes";
 import ReportForm from "../common/report-form";
 import { getUserFlair } from "@utils/helpers/user-flair-type";
-import { UserFlair } from "../common/user-flair";
+import { FetchUserFlair } from "../common/user-flair";
 
 
 interface CommentNodeState {
@@ -309,8 +309,8 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
 
               <PersonListing person={cv.creator} />
 
-              <UserFlair
-                userFlair={getUserFlair(cv.creator)}
+              <FetchUserFlair
+                userFlair={getUserFlair(cv.creator, cv.community)}
                 classNames="py-1 ms-1"
               />
 

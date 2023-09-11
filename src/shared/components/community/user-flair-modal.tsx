@@ -2,10 +2,13 @@ import { Component } from 'inferno';
 import { Icon } from "../common/icon";
 import { UserFlairType, clearUserFlair, setUserFlair } from '@utils/helpers/user-flair-type';
 import { UserFlair } from '../common/user-flair';
+import { Person, Community } from 'lemmy-js-client';
 
 interface UserFlairModalProp {
   userFlair: UserFlairType | null;
-  flairList: UserFlairType[]
+  flairList: UserFlairType[];
+  user: Person;
+  community: Community;
   onUserFlairUpdate: (newFlair: UserFlairType | null) => void;
 }
 
@@ -30,10 +33,10 @@ export class UserFlairModal extends Component<UserFlairModalProp> {
     
             const flair = userFlairDialog.returnValue;
             if (flair !== 'cancel' && flair !== 'default') {
-              const pickedFlair = this.props.flairList.find(f => f.id === flair) as unknown as UserFlairType;
+              const pickedFlair = this.props.flairList.find(f => f.name === flair) as unknown as UserFlairType;
               
               this.props.onUserFlairUpdate(pickedFlair)
-              setUserFlair(pickedFlair);
+              setUserFlair(this.props.user, this.props.community, pickedFlair);
             }
         });
         
@@ -49,7 +52,7 @@ export class UserFlairModal extends Component<UserFlairModalProp> {
             userFlairDialog.close(); // Send the selected value here.
     
             this.props.onUserFlairUpdate(null)
-            clearUserFlair();
+            clearUserFlair(this.props.user, this.props.community);
         });
     }
 
@@ -68,8 +71,8 @@ export class UserFlairModal extends Component<UserFlairModalProp> {
             <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));column-gap: 1rem;row-gap: 0.5rem;" class="w-100">
                 {this.props.flairList.map(flair => (
                     <span>
-                        <input type="radio" name="userFlair" value={flair.id} class="me-2" id={"userFlair"+flair.id}/>
-                        <label htmlFor={"userFlair"+flair.id}>
+                        <input type="radio" name="userFlair" value={flair.name} class="me-2" id={"userFlair"+flair.name}/>
+                        <label htmlFor={"userFlair"+flair.name}>
                           <UserFlair
                             userFlair={flair}
                             classNames="fs-6"

@@ -13,6 +13,7 @@ import {
   EditCommunity,
   FollowCommunity,
   Language,
+  Person,
   PersonView,
   PurgeCommunity,
   RemoveCommunity,
@@ -76,9 +77,25 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
     leaveModTeamLoading: false,
     followCommunityLoading: false,
     purgeCommunityLoading: false,
-    userFlair: getUserFlair(UserService.Instance.myUserInfo?.local_user_view.person ?? null),
-    communityUserFlairList: getUserFlairList(this.props.community_view.community),
+    userFlair: null,
+    communityUserFlairList: []
   };
+
+  async componentDidMount() {
+    console.log('Attempting to load sidebar')
+    try{
+      this.setState({
+        userFlair: await getUserFlair(UserService.Instance.myUserInfo?.local_user_view.person, this.props.community_view.community),
+        communityUserFlairList: await getUserFlairList(UserService.Instance.myUserInfo?.local_user_view.person, this.props.moderators, this.props.community_view.community),
+      });
+    } catch(e) {
+      console.log(e)
+      this.setState({
+        userFlair: null,
+        communityUserFlairList: [],
+      });
+    }
+  }
 
   constructor(props: any, context: any) {
     super(props, context);
@@ -120,7 +137,14 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
   render() {
     return (
       <div className="community-sidebar">
-        <UserFlairModal ref={el => this.userFlairModalRef = el} userFlair={this.state.userFlair} onUserFlairUpdate={this.handleUserFlairUpdate} flairList={this.state.communityUserFlairList} />
+        <UserFlairModal
+          ref={el => this.userFlairModalRef = el}
+          userFlair={this.state.userFlair}
+          flairList={this.state.communityUserFlairList}
+          community={this.props.community_view.community}
+          user={UserService.Instance.myUserInfo?.local_user_view.person as Person}
+          onUserFlairUpdate={this.handleUserFlairUpdate}
+        />
         {!this.state.showEdit ? (
           this.sidebar()
         ) : (

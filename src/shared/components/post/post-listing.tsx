@@ -64,7 +64,7 @@ import { MetadataCard } from "./metadata-card";
 import { PostForm } from "./post-form";
 import ReportForm from "../common/report-form";
 import { getUserFlair } from "@utils/helpers/user-flair-type";
-import { UserFlair } from "../common/user-flair";
+import { FetchUserFlair } from "../common/user-flair";
 
 interface PostListingState {
   showEdit: boolean;
@@ -420,8 +420,8 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
       <div className="small mb-1 mb-md-0">
         <PersonListing person={post_view.creator} />
 
-          <UserFlair
-            userFlair={getUserFlair(post_view.creator)}
+          <FetchUserFlair
+            userFlair={getUserFlair(post_view.creator, post_view.community)}
             classNames="pb-1 mx-1"
           />
           
