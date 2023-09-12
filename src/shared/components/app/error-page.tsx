@@ -4,6 +4,7 @@ import { Component } from "inferno";
 import { T } from "inferno-i18next-dess";
 import { IsoDataOptionalSite } from "../../interfaces";
 import { I18NextService } from "../../services";
+import { getStaticDir } from "@utils/env";
 
 export class ErrorPage extends Component<any, any> {
   private isoData: IsoDataOptionalSite = setIsoData(this.context);
@@ -79,7 +80,7 @@ export class ErrorPage extends Component<any, any> {
           <ol class="list-group w-75 mx-auto mt-4">
             {errorPageData.adminMatrixIds.map((admin, i) => (
               <li class="list-group-item d-flex justify-content-between align-items-start" style="height: 4rem;" key={admin.matrix_user_id}>
-                <img src="https://lemmy.basedcount.com/pictrs/image/081d9829-58ea-4669-8e0f-62dc6842c8d2.png" alt={admin.name} class="h-100 me-2" />
+                <img src={admin.avatar ?? `${getStaticDir()}/assets/icons/icon-96x96.png`} alt={admin.name} class="h-100 me-2" />
                 <div class="ms-2 me-auto text-start">
                   <div class="fw-bold">{admin.display_name ?? admin.name}</div>
                   <a href={"https://matrix.to/#/" + admin.matrix_user_id}>{admin.matrix_user_id}</a>
