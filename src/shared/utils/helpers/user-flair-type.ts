@@ -9,62 +9,74 @@ export interface UserFlairType {
 }
 
 export async function getUserFlair(user: Person | undefined, community: Community): Promise<UserFlairType | null> {
-  console.log(`getUserFlair(${user === undefined ? undefined : user.actor_id} ${community.actor_id})`);
-  
-  if (user === undefined) return null;
+  try {
+    if (user === undefined) return null;
 
-  const res = await fetch(`http://localhost:6969/api/v1/user?id=${user.actor_id}&community=${community.actor_id}`);
+    const res = await fetch(`http://localhost:6969/api/v1/user?id=${user.actor_id}&community=${community.actor_id}`);
 
-  return res.json() as Promise<UserFlairType>;
+    return res.json() as Promise<UserFlairType>;
+  } catch (e) {
+    console.error('Error fetching user flair for', user?.actor_id);
+    return null;
+  }
 }
 
 export async function setUserFlair(user: Person, community: Community, newUserFlair: UserFlairType) {
-  console.log(`getUserFlair(${user.actor_id} ${community.actor_id} ${newUserFlair.toString()})`);
+  try {
+    await fetch("http://localhost:6969/api/v1/user", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_actor_id: user.actor_id,
+        community_actor_id: community.actor_id,
+        flair: newUserFlair.name
+      })
+    });
 
-  await fetch("http://localhost:6969/api/v1/user", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      user_actor_id: user.actor_id,
-      community_actor_id: community.actor_id,
-      flair: newUserFlair.name
-    })
-  })
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 export async function clearUserFlair(user: Person, community: Community) {
-  console.log(`getUserFlair(${user.actor_id.toString()} ${community.actor_id.toString()})`);
+  try {
+    await fetch("http://localhost:6969/api/v1/user", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_actor_id: user.actor_id,
+        community_actor_id: community.actor_id,
+      })
+    });
 
-  await fetch("http://localhost:6969/api/v1/user", {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      user_actor_id: user.actor_id,
-      community_actor_id: community.actor_id,
-    })
-  })
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 export async function getUserFlairList(requester: Person | undefined, moderators: CommunityModeratorView[], community: Community): Promise<UserFlairType[]> {
-  console.log(`getUserFlair(${requester === undefined ? undefined : requester.actor_id} ${moderators.toString()} ${community.actor_id})`);
+  try {
+    let modOnly = false;
 
-  let modOnly = false;
-  
-  if (requester !== undefined) {
-    for (const entry of moderators) {
-      if (entry.moderator.id === requester.id) {
-        modOnly = true;
-        break;
+    if (requester !== undefined) {
+      for (const entry of moderators) {
+        if (entry.moderator.id === requester.id) {
+          modOnly = true;
+          break;
+        }
       }
     }
+
+    const res = await fetch(`http://localhost:6969/api/v1/community?id=${community.actor_id}&mod_only=${modOnly}`);
+
+    return res.json() as Promise<UserFlairType[]>;
+  } catch (e) {
+    console.error('Error fetching user flair list in', community.actor_id);
+    return [];
   }
-
-  const res = await fetch(`http://localhost:6969/api/v1/community?id=${community.actor_id}&mod_only=${modOnly}`);
-
-  return res.json() as Promise<UserFlairType[]>;
 }
 

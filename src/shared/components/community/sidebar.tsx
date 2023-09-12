@@ -82,7 +82,6 @@ export class Sidebar extends Component<SidebarProps, SidebarState> {
   };
 
   async componentDidMount() {
-    console.log('Attempting to load sidebar')
     try{
       this.setState({
         userFlair: await getUserFlair(UserService.Instance.myUserInfo?.local_user_view.person, this.props.community_view.community),
