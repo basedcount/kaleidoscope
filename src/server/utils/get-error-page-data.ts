@@ -1,5 +1,5 @@
 import { ErrorPageData } from "@utils/types";
-import { GetSiteResponse } from "lemmy-js-client";
+import { GetSiteResponse, Person } from "lemmy-js-client";
 
 export function getErrorPageData(error: Error, site?: GetSiteResponse) {
   const errorPageData: ErrorPageData = {};
@@ -9,12 +9,14 @@ export function getErrorPageData(error: Error, site?: GetSiteResponse) {
   }
 
   const adminMatrixIds = site?.admins
-    .map(({ person: { matrix_user_id } }) => matrix_user_id)
-    .filter(id => id) as string[] | undefined;
+    .map(pv => pv.person)
+    .filter(person => person.matrix_user_id) as Person[] | undefined;
 
   if (adminMatrixIds && adminMatrixIds.length > 0) {
     errorPageData.adminMatrixIds = adminMatrixIds;
   }
+
+  errorPageData.discordLink = process.env.DISCORD_URL;
 
   return errorPageData;
 }

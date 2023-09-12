@@ -1,3 +1,13 @@
+/* BASEDCOUNT STYLES */
+@media (min-width: 992px) {
+  .bc-error-page {
+    width: 50% !important;
+    padding: 0 4rem 0 4rem;
+  }
+}
+
+/* LEMMY STYLES BELOW */
+
 .navbar-expand-lg .navbar-nav .nav-link {
   padding-right: 0.75rem !important;
   padding-left: 0.75rem !important;
