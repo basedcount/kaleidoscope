@@ -1,4 +1,5 @@
 import { Person, Community, CommunityModeratorView } from "lemmy-js-client";
+import { EnvVars } from "../../get-env-vars";
 
 export interface UserFlairType {
   name: string;               //Flair internal name (used for config purposes, eg: mod view)
@@ -9,6 +10,8 @@ export interface UserFlairType {
 }
 
 export async function getUserFlair(user: Person | undefined, community: Community): Promise<UserFlairType | null> {
+  if(!EnvVars.ENABLE_USER_FLAIRS) return null;
+
   try {
     if (user === undefined) return null;
 
@@ -22,6 +25,8 @@ export async function getUserFlair(user: Person | undefined, community: Communit
 }
 
 export async function setUserFlair(user: Person, community: Community, newUserFlair: UserFlairType) {
+  if(!EnvVars.ENABLE_USER_FLAIRS) return;
+
   try {
     await fetch("http://localhost:6969/api/v1/user", {
       method: "PUT",
@@ -41,6 +46,8 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
 }
 
 export async function clearUserFlair(user: Person, community: Community) {
+  if(!EnvVars.ENABLE_USER_FLAIRS) return;
+
   try {
     await fetch("http://localhost:6969/api/v1/user", {
       method: "DELETE",
@@ -59,6 +66,8 @@ export async function clearUserFlair(user: Person, community: Community) {
 }
 
 export async function getUserFlairList(requester: Person | undefined, moderators: CommunityModeratorView[], community: Community): Promise<UserFlairType[]> {
+  if(!EnvVars.ENABLE_USER_FLAIRS) return [];
+
   try {
     let modOnly = false;
 

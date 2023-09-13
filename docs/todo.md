@@ -1,1 +1,0 @@
-TODO: only show user flair dialog and user flairs in comments and posts if user flairs allowed
