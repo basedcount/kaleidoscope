@@ -47,11 +47,11 @@ export class Footer extends Component<FooterProps, any> {
                 </NavLink>
               </li>
             )}
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <a className="nav-link" href={docsUrl}>
                 {I18NextService.i18n.t("docs")}
               </a>
-            </li>
+            </li> */}
             <li className="nav-item">
               <a className="nav-link" href={this.props.gitRepository ?? repoUrl}>
                 {I18NextService.i18n.t("code")}
