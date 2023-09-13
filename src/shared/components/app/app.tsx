@@ -14,22 +14,38 @@ import { Footer } from "./footer";
 import { Navbar } from "./navbar";
 import "./styles.scss";
 import { Theme } from "./theme";
+import { EnvVars } from "shared/get-env-vars";
 
 interface AppProps {
   user?: MyUserInfo;
 }
 
-export class App extends Component<AppProps, any> {
+interface AppState {
+  env?: EnvVars | null;
+}
+
+export class App extends Component<AppProps, AppState> {
   private isoData: IsoDataOptionalSite = setIsoData(this.context);
   private readonly mainContentRef: RefObject<HTMLElement>;
   constructor(props: AppProps, context: any) {
     super(props, context);
     this.mainContentRef = createRef();
+    this.state = { env: null }
   }
 
   handleJumpToContent(event) {
     event.preventDefault();
     this.mainContentRef.current?.focus();
+  }
+
+  // Fetch env vars from backend - don't send secrets this way, this is all public stuff
+  async componentDidMount() {
+    try {
+      const res = await fetch('/env');
+      this.setState({ env: await res.json() });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   user = UserService.Instance.myUserInfo;
@@ -56,7 +72,7 @@ export class App extends Component<AppProps, any> {
             {siteView && (
               <Theme defaultTheme={siteView.local_site.default_theme} />
             )}
-            <Navbar siteRes={siteRes} />
+            <Navbar siteRes={siteRes} donationUrl={this.state?.env?.DONATION_URL} />
             <div className="mt-4 p-0 fl-1">
               <Switch>
                 {routes.map(
@@ -91,7 +107,7 @@ export class App extends Component<AppProps, any> {
                 <Route component={ErrorPage} />
               </Switch>
             </div>
-            <Footer site={siteRes} />
+            <Footer site={siteRes} gitRepository={this.state?.env?.GIT_REPOSITORY}/>
           </div>
         </Provider>
       </>

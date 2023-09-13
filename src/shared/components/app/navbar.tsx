@@ -19,6 +19,7 @@ import { PictrsImage } from "../common/pictrs-image";
 
 interface NavbarProps {
   siteRes?: GetSiteResponse;
+  donationUrl?: string;
 }
 
 interface NavbarState {
@@ -223,7 +224,7 @@ export class Navbar extends Component<NavbarProps, NavbarState> {
                 <a
                   className="nav-link d-inline-flex align-items-center d-md-inline-block"
                   title={I18NextService.i18n.t("support_lemmy")}
-                  href={donateLemmyUrl}
+                  href={this.props.donationUrl ?? donateLemmyUrl}
                 >
                   <Icon icon="heart" classes="small" />
                   <span className="d-inline ms-1 d-md-none ms-md-0">

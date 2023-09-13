@@ -11,6 +11,7 @@ import ServiceWorkerHandler from "./handlers/service-worker-handler";
 import ThemeHandler from "./handlers/theme-handler";
 import ThemesListHandler from "./handlers/themes-list-handler";
 import { setCacheControl, setDefaultCsp } from "./middleware";
+import GetEnvVars from "../shared/get-env-vars";
 
 const server = express();
 const [hostname, port] = process.env["LEMMY_UI_HOST"]
@@ -42,6 +43,7 @@ server.get("/service-worker.js", ServiceWorkerHandler);
 server.get("/manifest.webmanifest", ManifestHandler);
 server.get("/css/themes/:name", ThemeHandler);
 server.get("/css/themelist", ThemesListHandler);
+server.get("/env", GetEnvVars);
 server.get("/*", CatchAllHandler);
 
 server.listen(Number(port), hostname, () => {

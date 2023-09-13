@@ -7,6 +7,7 @@ import { VERSION } from "../../version";
 
 interface FooterProps {
   site?: GetSiteResponse;
+  gitRepository?: string;
 }
 
 export class Footer extends Component<FooterProps, any> {
@@ -52,15 +53,15 @@ export class Footer extends Component<FooterProps, any> {
               </a>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href={repoUrl}>
+              <a className="nav-link" href={this.props.gitRepository ?? repoUrl}>
                 {I18NextService.i18n.t("code")}
               </a>
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <a className="nav-link" href={joinLemmyUrl}>
                 {new URL(joinLemmyUrl).hostname}
               </a>
-            </li>
+            </li> */}
           </ul>
         </div>
       </footer>
