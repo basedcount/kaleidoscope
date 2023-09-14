@@ -10,10 +10,12 @@ export interface UserFlairType {
 }
 
 export async function getUserFlair(user: Person | undefined, community: Community): Promise<UserFlairType | null> {
-  await EnvVars.setEnvVars();
-  if(!EnvVars.ENABLE_USER_FLAIRS) return null;
-
   try {
+    await EnvVars.setEnvVars();
+    if (!EnvVars.ENABLE_USER_FLAIRS) return null;
+
+    if (!community.local) return null;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
+
     if (user === undefined) return null;
 
     const res = await fetch(`http://localhost:6969/api/v1/user?id=${user.actor_id}&community=${community.actor_id}`);
@@ -26,10 +28,13 @@ export async function getUserFlair(user: Person | undefined, community: Communit
 }
 
 export async function setUserFlair(user: Person, community: Community, newUserFlair: UserFlairType) {
-  await EnvVars.setEnvVars();
-  if(!EnvVars.ENABLE_USER_FLAIRS) return;
-
   try {
+    await EnvVars.setEnvVars();
+    if (!EnvVars.ENABLE_USER_FLAIRS) return;
+
+    if (!community.local) return;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
+
+
     await fetch("http://localhost:6969/api/v1/user", {
       method: "PUT",
       headers: {
@@ -48,10 +53,12 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
 }
 
 export async function clearUserFlair(user: Person, community: Community) {
-  await EnvVars.setEnvVars();
-  if(!EnvVars.ENABLE_USER_FLAIRS) return;
-
   try {
+    await EnvVars.setEnvVars();
+    if (!EnvVars.ENABLE_USER_FLAIRS) return;
+
+    if (!community.local) return;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
+
     await fetch("http://localhost:6969/api/v1/user", {
       method: "DELETE",
       headers: {
@@ -69,10 +76,12 @@ export async function clearUserFlair(user: Person, community: Community) {
 }
 
 export async function getUserFlairList(requester: Person | undefined, moderators: CommunityModeratorView[], community: Community): Promise<UserFlairType[]> {
-  await EnvVars.setEnvVars();
-  if(!EnvVars.ENABLE_USER_FLAIRS) return [];
-
   try {
+    await EnvVars.setEnvVars();
+    if (!EnvVars.ENABLE_USER_FLAIRS) return [];
+
+    if (!community.local) return [];  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
+
     let modOnly = false;
 
     if (requester !== undefined) {
