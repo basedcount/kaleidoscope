@@ -8,6 +8,7 @@ import { VERSION } from "../../version";
 interface FooterProps {
   site?: GetSiteResponse;
   gitRepository?: string;
+  discordUrl?: string;
 }
 
 export class Footer extends Component<FooterProps, any> {
@@ -62,6 +63,13 @@ export class Footer extends Component<FooterProps, any> {
                 {new URL(joinLemmyUrl).hostname}
               </a>
             </li> */}
+            {this.props.discordUrl !== undefined && (
+              <li className="nav-item">
+                <a className="nav-link" href={this.props.discordUrl}>
+                  Discord
+                </a>
+              </li>
+            )}
           </ul>
         </div>
       </footer>

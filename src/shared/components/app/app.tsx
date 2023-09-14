@@ -21,7 +21,9 @@ interface AppProps {
 }
 
 interface AppState {
-  env?: EnvVars | null;
+  donationUrl?: string;
+  discordUrl?: string;
+  gitRepository?: string;
 }
 
 export class App extends Component<AppProps, AppState> {
@@ -39,12 +41,8 @@ export class App extends Component<AppProps, AppState> {
 
   // Fetch env vars from backend - don't send secrets this way, this is all public stuff
   async componentDidMount() {
-    try {
-      const res = await fetch('/env');
-      EnvVars.setEnvVars(await res.json());
-    } catch (e) {
-      console.error(e);
-    }
+    await EnvVars.setEnvVars();
+    this.setState({ donationUrl: EnvVars.DONATION_URL, discordUrl: EnvVars.DISCORD_URL, gitRepository: EnvVars.GIT_REPOSITORY, })
   }
 
   user = UserService.Instance.myUserInfo;
@@ -71,7 +69,7 @@ export class App extends Component<AppProps, AppState> {
             {siteView && (
               <Theme defaultTheme={siteView.local_site.default_theme} />
             )}
-            <Navbar siteRes={siteRes} donationUrl={EnvVars.DONATION_URL} />
+            <Navbar siteRes={siteRes} donationUrl={this.state?.donationUrl} />
             <div className="mt-4 p-0 fl-1">
               <Switch>
                 {routes.map(
@@ -91,10 +89,10 @@ export class App extends Component<AppProps, AppState> {
                               {RouteComponent &&
                                 (isAuthPath(path ?? "") ? (
                                   <AuthGuard>
-                                    <RouteComponent {...routeProps} env={this.state?.env} />
+                                    <RouteComponent {...routeProps} />
                                   </AuthGuard>
                                 ) : (
-                                  <RouteComponent {...routeProps} env={this.state?.env} />
+                                  <RouteComponent {...routeProps} />
                                 ))}
                             </div>
                           </ErrorGuard>
@@ -106,7 +104,7 @@ export class App extends Component<AppProps, AppState> {
                 <Route component={ErrorPage} />
               </Switch>
             </div>
-            <Footer site={siteRes} gitRepository={EnvVars.GIT_REPOSITORY} />
+            <Footer site={siteRes} gitRepository={this.state?.gitRepository} discordUrl={this.state?.discordUrl} />
           </div>
         </Provider>
       </>

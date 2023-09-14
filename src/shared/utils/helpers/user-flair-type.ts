@@ -10,6 +10,7 @@ export interface UserFlairType {
 }
 
 export async function getUserFlair(user: Person | undefined, community: Community): Promise<UserFlairType | null> {
+  await EnvVars.setEnvVars();
   if(!EnvVars.ENABLE_USER_FLAIRS) return null;
 
   try {
@@ -25,6 +26,7 @@ export async function getUserFlair(user: Person | undefined, community: Communit
 }
 
 export async function setUserFlair(user: Person, community: Community, newUserFlair: UserFlairType) {
+  await EnvVars.setEnvVars();
   if(!EnvVars.ENABLE_USER_FLAIRS) return;
 
   try {
@@ -46,6 +48,7 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
 }
 
 export async function clearUserFlair(user: Person, community: Community) {
+  await EnvVars.setEnvVars();
   if(!EnvVars.ENABLE_USER_FLAIRS) return;
 
   try {
@@ -66,6 +69,7 @@ export async function clearUserFlair(user: Person, community: Community) {
 }
 
 export async function getUserFlairList(requester: Person | undefined, moderators: CommunityModeratorView[], community: Community): Promise<UserFlairType[]> {
+  await EnvVars.setEnvVars();
   if(!EnvVars.ENABLE_USER_FLAIRS) return [];
 
   try {
