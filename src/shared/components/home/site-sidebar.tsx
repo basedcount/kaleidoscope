@@ -7,6 +7,8 @@ import { Badges } from "../common/badges";
 import { BannerIconHeader } from "../common/banner-icon-header";
 import { Icon } from "../common/icon";
 import { PersonListing } from "../person/person-listing";
+import { fediseerInfo, fediseerApi } from "../../config";
+import { EnvVars } from "../../get-env-vars";
 
 interface SiteSidebarProps {
   site: Site;
@@ -18,15 +20,32 @@ interface SiteSidebarProps {
 
 interface SiteSidebarState {
   collapsed: boolean;
+  siteIsInFediseer: boolean;
 }
 
 export class SiteSidebar extends Component<SiteSidebarProps, SiteSidebarState> {
   state: SiteSidebarState = {
     collapsed: false,
+    siteIsInFediseer: true,
   };
+  domain = new URL(this.props.site.actor_id).host;
 
   constructor(props: any, context: any) {
     super(props, context);
+  }
+
+  async componentDidMount() {
+    await EnvVars.setEnvVars();
+    if (!EnvVars.ENABLE_FEDISEER) return;
+
+    // const url = `${fediseerApi}/v1/whitelist/${this.domain}`; //Request to the Fediseer API
+    const url = `${fediseerApi}/v1/whitelist/lemmy.basedcount.com`; //Request to the Fediseer API
+
+    const res = await fetch(url, {
+      method: "HEAD",
+    })
+
+    this.setState({ siteIsInFediseer: res.ok })
   }
 
   render() {
@@ -93,6 +112,7 @@ export class SiteSidebar extends Component<SiteSidebarProps, SiteSidebarState> {
         {site.sidebar && this.siteSidebar(site.sidebar)}
         {this.props.counts && <Badges counts={this.props.counts} />}
         {this.props.admins && this.admins(this.props.admins)}
+        {this.state.siteIsInFediseer && EnvVars.ENABLE_FEDISEER && this.fediseer()}
       </div>
     );
   }
@@ -105,15 +125,29 @@ export class SiteSidebar extends Component<SiteSidebarProps, SiteSidebarState> {
 
   admins(admins: PersonView[]) {
     return (
-      <ul className="mt-1 list-inline small mb-0">
-        <li className="list-inline-item">{I18NextService.i18n.t("admins")}:</li>
-        {admins.map(av => (
-          <li key={av.person.id} className="list-inline-item">
-            <PersonListing person={av.person} />
-          </li>
-        ))}
-      </ul>
+      <>
+        <h6 class="my-1 font-monospace" style="text-transform: capitalize;">{I18NextService.i18n.t("admins")}:</h6>
+        <ul className="list-inline small mb-0" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));">
+          {admins.map(av => (
+            <li key={av.person.id} className="list-inline-item" style="text-overflow: ellipsis; overflow: hidden;">
+              <PersonListing person={av.person} />
+            </li>
+          ))}
+        </ul>
+      </>
     );
+  }
+
+  fediseer() {
+    return (
+      <>
+        <h6 class="mb-1 mt-1 font-monospace">Member of the <a href={fediseerInfo} class="fw-semibold" >Fediseer</a> network:</h6>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr);">
+          <img src={`https://fediseer.com/api/v1/badges/guarantees/${this.domain}.svg`} alt="guarantor" class="me-4" />
+          <img src={`https://fediseer.com/api/v1/badges/endorsements/${this.domain}.com.svg`} alt="endorsements" />
+        </div>
+      </>
+    )
   }
 
   handleCollapseSidebar(i: SiteSidebar) {

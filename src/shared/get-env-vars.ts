@@ -5,6 +5,7 @@ export interface EnvVarsType {
     DONATION_URL?: string;
     GIT_REPOSITORY?: string;
     ENABLE_USER_FLAIRS: boolean;
+    ENABLE_FEDISEER: boolean;
 }
 
 
@@ -15,6 +16,7 @@ export default async ({ res }: { res: Response }) => {
         DONATION_URL: process.env.DONATION_URL,
         GIT_REPOSITORY: process.env.GIT_REPOSITORY,
         ENABLE_USER_FLAIRS: process.env.ENABLE_USER_FLAIRS === 'true',
+        ENABLE_FEDISEER: process.env.ENABLE_FEDISEER !== 'false',
     } satisfies EnvVarsType;
 
     res.type("json").send(JSON.stringify(vars));
@@ -27,6 +29,7 @@ export class EnvVars {
     static DONATION_URL?: string;
     static GIT_REPOSITORY?: string;
     static ENABLE_USER_FLAIRS = false;
+    static ENABLE_FEDISEER = true;
 
     static async setEnvVars() {
         try {
@@ -39,6 +42,7 @@ export class EnvVars {
             EnvVars.DONATION_URL = env.DONATION_URL;
             EnvVars.GIT_REPOSITORY = env.GIT_REPOSITORY;
             EnvVars.ENABLE_USER_FLAIRS = env.ENABLE_USER_FLAIRS;
+            EnvVars.ENABLE_FEDISEER = env.ENABLE_FEDISEER;
 
             this.#fetched = true;
         } catch (e) {

@@ -14,6 +14,8 @@ export const archiveTodayUrl = "https://archive.today";
 export const ghostArchiveUrl = "https://ghostarchive.org";
 export const webArchiveUrl = "https://web.archive.org";
 export const elementUrl = "https://element.io";
+export const fediseerInfo = "https://gui.fediseer.com/glossary";
+export const fediseerApi = "https://fediseer.com/api";
 
 export const postRefetchSeconds: number = 60 * 1000;
 export const trendingFetchLimit = 6;
