@@ -46,6 +46,8 @@ import { SortSelect } from "../common/sort-select";
 import Tabs from "../common/tabs";
 import { CommunityLink } from "../community/community-link";
 import { PersonListing } from "./person-listing";
+import { fediseerInfo } from "../../config";
+import { isBrowser } from "@utils/browser";
 
 interface SettingsState {
   saveRes: RequestState<LoginResponse>;
@@ -95,6 +97,7 @@ interface SettingsState {
   searchCommunityOptions: Choice[];
   searchPersonLoading: boolean;
   searchPersonOptions: Choice[];
+  fediseerKey: string;
 }
 
 type FilterType = "user" | "community";
@@ -152,6 +155,7 @@ export class Settings extends Component<any, SettingsState> {
     searchCommunityOptions: [],
     searchPersonLoading: false,
     searchPersonOptions: [],
+    fediseerKey: this.getKeyInitialValue(),
   };
 
   constructor(props: any, context: any) {
@@ -264,6 +268,21 @@ export class Settings extends Component<any, SettingsState> {
               key: "blocks",
               label: I18NextService.i18n.t("blocks"),
               getNode: this.blockCards,
+            },
+            {
+              key: "fediseer",
+              label: "Fediseer",
+              getNode: isSelected => (
+                <div
+                  className={classNames("tab-pane", {
+                    active: isSelected,
+                  })}
+                  role="tabpanel"
+                  id="banned_users-tab-pane"
+                >
+                  {this.fediseerAdmin()}
+                </div>
+              ),
             },
           ]}
         />
@@ -1323,5 +1342,133 @@ export class Settings extends Component<any, SettingsState> {
         this.setState({ communityBlocks: mui.community_blocks });
       }
     }
+  }
+
+  fediseerAdmin() {
+    //TODO: if Fediseer is off hide tab
+    //TODO: hide admin section from non admins
+    //TODO: create map of settings, print key in "currently on", write key to localstorage and use it to handle hiding logic
+
+    return (
+      <div className="row">
+        {/* User settings */}
+        <div className="col-12 col-md-6">
+          <div className="card border-secondary mb-3">
+            <div className="card-body">
+              <h2 className="h4 mb-3" style="text-transform: capitalize;">Content filters</h2>
+              <p>
+                Your instance is part of the <strong>Fediseer network</strong>. Because of this, you may optionally enable an automated content filtering system to remove untrusted actors from your feed.
+              </p>
+              <p>
+                The filter is configured according to the <i>endorsements</i>, <i>hesitations</i> and <i>censors</i> submitted by the <strong>{this.state.siteRes.site_view.site.name}</strong> admin team through Fediseer. <br />
+                Check out the <a href={fediseerInfo}>Fediseer Glossary</a> to learn more. The filter is disabled by default.
+              </p>
+
+              <div class="w-75">
+                The following filtering options are available:
+                <ul class="list-group my-2">
+                  <li class="list-group-item list-group-item-secondary">
+                    <label class="w-100" for="fediseer-disabled">
+                      <input type="radio" class="me-1" name="filterOption" value="disabled" id="fediseer-disabled" checked />
+                      <span class="ms-2">
+                        Filter disabled
+                      </span>
+                    </label>
+                  </li>
+                  <li class="list-group-item list-group-item-success d-flex flex-row">
+                    <input type="radio" class="me-1" name="filterOption" value="moderate" id="fediseer-moderate" />
+                    <label class="d-flex flex-column ms-2 w-100" for="fediseer-moderate">
+                      <span>
+                        Remove dangerous content (moderate)
+                      </span>
+                      <small>
+                        Content from <i>censored</i> instances won't be shown
+                      </small>
+                    </label>
+                  </li>
+                  <li class="list-group-item list-group-item-warning  d-flex flex-row">
+                    <input type="radio" class="me-1" name="filterOption" value="strict" id="fediseer-strict" />
+                    <label class="d-flex flex-column ms-2 w-100" for="fediseer-strict">
+                      <span>
+                        Remove untrusted content (strict)
+                      </span>
+                      <small>
+                        Content from <i>hesitated</i> instances won't be shown
+                      </small>
+                    </label>
+                  </li>
+                  <li class="list-group-item list-group-item-danger  d-flex flex-row">
+                    <input type="radio" class="me-1" name="filterOption" value="very-strict" id="fediseer-very-strict" />
+                    <label class="d-flex flex-column ms-2 w-100" for="fediseer-very-strict">
+                      <span>
+                        Show exclusively trusted content (very strict)
+                      </span>
+                      <small>
+                        Only content from <i>endorsed</i> instances will be shown
+                      </small>
+                    </label>
+                  </li>
+                </ul>
+
+                <span class="mt-3">
+                  Currently set to: <span class="font-monospace">disabled</span>.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Admin settngs */}
+        <div className="col-12 col-md-6">
+          <div className="card border-secondary mb-3">
+            <div className="card-body">
+              < h2 className="h4 mb-3" style="text-transform: capitalize;" > {I18NextService.i18n.t("admin")}</h2 >
+              <p>
+                Only administrators may view this section. From here, you can integrate the Fediseer API with your Lemmy instance.
+              </p>
+              <p>
+                Once an API key has been set up through this page, it will provide you access to Fediseer directly from the Lemmy interface. The following actions are available:
+                <ul class="mt-1">
+                  <li>Guaranteeing</li>
+                  <li>Endorsing</li>
+                  <li>Hesitating</li>
+                  <li>Censoring</li>
+                </ul>
+                To learn more about the meaning of these terms, please visit the <a href={fediseerInfo}>Fediseer Glossary</a>.
+              </p>
+              <h2 class="h6 mb-2 fw-semibold">Your API key</h2>
+              <i>If you don't have an API key you can claim one from the <a href="https://gui.fediseer.com/auth/claim-instance">Fediseer GUI</a>.</i>
+              <div class="d-flex flex-row gap-3 mb-3 mt-2">
+                <input class="form-control" type="text" id="site-desc" placeholder="Enter your key..." value={this.state.fediseerKey} onInput={this.handleKeyChange} />
+                <button class="btn btn-secondary me-2" type="submit" onClick={this.handleKeySave}>Save</button>
+              </div>
+              <p>
+                The key will be saved locally and only used when interacting with Fediseer. Your instance's server will never receive it.
+                <br />
+                If you change browser or log from a different machine you'll have to re-insert the key.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    );
+  }
+
+  handleKeyChange = (event: any) => {
+    this.setState({ fediseerKey: event.target.value });
+  }
+
+  handleKeySave = (_) => {
+    localStorage.setItem("FEDISEER_KEY", this.state.fediseerKey);
+  }
+
+  getKeyInitialValue() {
+    if (isBrowser()) {
+      return localStorage.getItem('FEDISEER_KEY') ?? '';
+    }
+
+    return '';
   }
 }

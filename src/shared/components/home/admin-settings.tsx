@@ -31,8 +31,6 @@ import { EmojiForm } from "./emojis-form";
 import RateLimitForm from "./rate-limit-form";
 import { SiteForm } from "./site-form";
 import { TaglineForm } from "./tagline-form";
-import { fediseerInfo } from "../../config";
-import { isBrowser } from "@utils/browser";
 
 type AdminSettingsData = RouteDataResponse<{
   bannedRes: BannedPersonsResponse;
@@ -49,7 +47,6 @@ interface AdminSettingsState {
   loading: boolean;
   themeList: string[];
   isIsomorphic: boolean;
-  fediseerKey: string;
 }
 
 export class AdminSettings extends Component<any, AdminSettingsState> {
@@ -64,7 +61,6 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
     loading: false,
     themeList: [],
     isIsomorphic: false,
-    fediseerKey: this.getKeyInitialValue(),
   };
 
   constructor(props: any, context: any) {
@@ -236,21 +232,6 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
                 </div>
               ),
             },
-            {
-              key: "fediseer",
-              label: "Fediseer",
-              getNode: isSelected => (
-                <div
-                  className={classNames("tab-pane", {
-                    active: isSelected,
-                  })}
-                  role="tabpanel"
-                  id="banned_users-tab-pane"
-                >
-                  {this.fediseer()}
-                </div>
-              ),
-            },
           ]}
         />
       </div>
@@ -395,63 +376,5 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
     if (res.state === "success") {
       updateEmojiDataModel(res.data.custom_emoji);
     }
-  }
-
-  fediseer() {
-    switch (this.state.bannedRes.state) {
-      case "loading":
-        return (
-          <h5>
-            <Spinner large />
-          </h5>
-        );
-      case "success": {
-        return (
-          <div class="w-50">
-            <h1 className="h4 mb-3" style="text-transform: capitalize;">Fediseer - {I18NextService.i18n.t("admin")}</h1>
-            <p>
-              From this page you can integrate the Fediseer API with your Lemmy instance.
-            </p>
-            <p>
-              Once an API key has been set up through this page, you will be able to interact with other instances in the following ways:
-              <ul class="mt-1">
-                <li>Guaranteeing</li>
-                <li>Endorsing</li>
-                <li>Hesitating</li>
-                <li>Censoring</li>
-              </ul>
-              To learn more about the meaning of these terms, please visit the <a href={fediseerInfo}>Fediseer Glossary</a>.
-            </p>
-            <h2 class="h5 mb-2">Your API key</h2>
-            <i>If you don't have an API key you can claim one from the <a href="https://gui.fediseer.com/auth/claim-instance">Fediseer GUI</a>.</i>
-            <div class="d-flex flex-row gap-3 mb-3 mt-2">
-              <input class="form-control" type="text" id="site-desc" placeholder="Enter your key..." value={this.state.fediseerKey} onInput={this.handleKeyChange} />
-              <button class="btn btn-secondary me-2" type="submit" onClick={this.handleKeySave}>Save</button>
-            </div>
-            <p>
-              The key will be saved locally and only used when interacting with Fediseer. Your instance's server will never receive it.
-              <br />
-              If you change browser or log from a different machine you'll have to re-insert the key.
-            </p>
-          </div>
-        );
-      }
-    }
-  }
-
-  handleKeyChange = (event: any) => {
-    this.setState({ fediseerKey: event.target.value });
-  }
-
-  handleKeySave = (_) => {
-    localStorage.setItem("FEDISEER_KEY", this.state.fediseerKey);
-  }
-
-  getKeyInitialValue() {
-    if (isBrowser()) {
-      return localStorage.getItem('FEDISEER_KEY') ?? '';
-    }
-
-    return '';
   }
 }
