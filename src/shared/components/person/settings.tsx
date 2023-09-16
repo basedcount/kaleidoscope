@@ -98,6 +98,7 @@ interface SettingsState {
   searchPersonLoading: boolean;
   searchPersonOptions: Choice[];
   fediseerKey: string;
+  fediseerFilter: string;
 }
 
 type FilterType = "user" | "community";
@@ -155,7 +156,8 @@ export class Settings extends Component<any, SettingsState> {
     searchCommunityOptions: [],
     searchPersonLoading: false,
     searchPersonOptions: [],
-    fediseerKey: this.getKeyInitialValue(),
+    fediseerKey: this.getFediseerKeyInitialValue(),
+    fediseerFilter: this.getFediseerFilterInitialValue()
   };
 
   constructor(props: any, context: any) {
@@ -1360,7 +1362,7 @@ export class Settings extends Component<any, SettingsState> {
                 Your instance is part of the <strong>Fediseer network</strong>. Because of this, you may optionally enable an automated content filtering system to remove untrusted actors from your feed.
               </p>
               <p>
-                The filter is configured according to the <i>endorsements</i>, <i>hesitations</i> and <i>censors</i> submitted by the <strong>{this.state.siteRes.site_view.site.name}</strong> admin team through Fediseer. <br />
+                The filter is configured according to the <i>endorsements</i>, <i>hesitations</i> and <i>censors</i> submitted by the <strong>{this.state.siteRes.site_view.site.name}</strong> admin team through Fediseer.
                 Check out the <a href={fediseerInfo}>Fediseer Glossary</a> to learn more. The filter is disabled by default.
               </p>
 
@@ -1369,14 +1371,14 @@ export class Settings extends Component<any, SettingsState> {
                 <ul class="list-group my-2">
                   <li class="list-group-item list-group-item-secondary">
                     <label class="w-100" for="fediseer-disabled">
-                      <input type="radio" class="me-1" name="filterOption" value="disabled" id="fediseer-disabled" checked />
+                      <input type="radio" class="me-1" name="filterOption" value="disabled" id="fediseer-disabled" checked={this.state.fediseerFilter === 'disabled'} onChange={this.setFediseerFilter} />
                       <span class="ms-2">
                         Filter disabled
                       </span>
                     </label>
                   </li>
                   <li class="list-group-item list-group-item-success d-flex flex-row">
-                    <input type="radio" class="me-1" name="filterOption" value="moderate" id="fediseer-moderate" />
+                    <input type="radio" class="me-1" name="filterOption" value="moderate" id="fediseer-moderate" checked={this.state.fediseerFilter === 'moderate'} onChange={this.setFediseerFilter} />
                     <label class="d-flex flex-column ms-2 w-100" for="fediseer-moderate">
                       <span>
                         Remove dangerous content (moderate)
@@ -1387,7 +1389,7 @@ export class Settings extends Component<any, SettingsState> {
                     </label>
                   </li>
                   <li class="list-group-item list-group-item-warning  d-flex flex-row">
-                    <input type="radio" class="me-1" name="filterOption" value="strict" id="fediseer-strict" />
+                    <input type="radio" class="me-1" name="filterOption" value="strict" id="fediseer-strict" checked={this.state.fediseerFilter === 'strict'} onChange={this.setFediseerFilter} />
                     <label class="d-flex flex-column ms-2 w-100" for="fediseer-strict">
                       <span>
                         Remove untrusted content (strict)
@@ -1398,20 +1400,20 @@ export class Settings extends Component<any, SettingsState> {
                     </label>
                   </li>
                   <li class="list-group-item list-group-item-danger  d-flex flex-row">
-                    <input type="radio" class="me-1" name="filterOption" value="very-strict" id="fediseer-very-strict" />
+                    <input type="radio" class="me-1" name="filterOption" value="very-strict" id="fediseer-very-strict" checked={this.state.fediseerFilter === 'very-strict'} onChange={this.setFediseerFilter} />
                     <label class="d-flex flex-column ms-2 w-100" for="fediseer-very-strict">
                       <span>
-                        Show exclusively trusted content (very strict)
+                        Only show trusted content (very strict)
                       </span>
                       <small>
-                        Only content from <i>endorsed</i> instances will be shown
+                        Content from non  <i>endorsed</i> instances won't be shown
                       </small>
                     </label>
                   </li>
                 </ul>
 
                 <span class="mt-3">
-                  Currently set to: <span class="font-monospace">disabled</span>.
+                  Currently set to: <span class="font-monospace">{this.state.fediseerFilter.replace('-', ' ')}</span>.
                 </span>
               </div>
             </div>
@@ -1464,11 +1466,24 @@ export class Settings extends Component<any, SettingsState> {
     localStorage.setItem("FEDISEER_KEY", this.state.fediseerKey);
   }
 
-  getKeyInitialValue() {
+  getFediseerKeyInitialValue() {
     if (isBrowser()) {
       return localStorage.getItem('FEDISEER_KEY') ?? '';
     }
 
     return '';
+  }
+
+  getFediseerFilterInitialValue() {
+    if (isBrowser()) {
+      return localStorage.getItem('FEDISEER_FILTER') ?? 'disabled';
+    }
+
+    return 'disabled';
+  }
+
+  setFediseerFilter = (event: any) => {
+    this.setState({ fediseerFilter: event.target.value });
+    localStorage.setItem("FEDISEER_FILTER", this.state.fediseerFilter);
   }
 }
