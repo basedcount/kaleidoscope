@@ -48,6 +48,8 @@ import { CommunityLink } from "../community/community-link";
 import { PersonListing } from "./person-listing";
 import { fediseerInfo } from "../../config";
 import { isBrowser } from "@utils/browser";
+import { amAdmin } from "@utils/roles";
+import { EnvVars } from "../../get-env-vars";
 
 interface SettingsState {
   saveRes: RequestState<LoginResponse>;
@@ -244,6 +246,8 @@ export class Settings extends Component<any, SettingsState> {
   async componentDidMount() {
     setupTippy();
     this.setState({ themeList: await fetchThemeList() });
+
+    await EnvVars.setEnvVars();
   }
 
   get documentTitle(): string {
@@ -259,35 +263,52 @@ export class Settings extends Component<any, SettingsState> {
           description={this.documentTitle}
           image={this.state.saveUserSettingsForm.avatar}
         />
-        <Tabs
-          tabs={[
-            {
-              key: "settings",
-              label: I18NextService.i18n.t("settings"),
-              getNode: this.userSettings,
-            },
-            {
-              key: "blocks",
-              label: I18NextService.i18n.t("blocks"),
-              getNode: this.blockCards,
-            },
-            {
-              key: "fediseer",
-              label: "Fediseer",
-              getNode: isSelected => (
-                <div
-                  className={classNames("tab-pane", {
-                    active: isSelected,
-                  })}
-                  role="tabpanel"
-                  id="banned_users-tab-pane"
-                >
-                  {this.fediseerAdmin()}
-                </div>
-              ),
-            },
-          ]}
-        />
+        {EnvVars.ENABLE_FEDISEER ?
+          <Tabs
+            tabs={[
+              {
+                key: "settings",
+                label: I18NextService.i18n.t("settings"),
+                getNode: this.userSettings,
+              },
+              {
+                key: "blocks",
+                label: I18NextService.i18n.t("blocks"),
+                getNode: this.blockCards,
+              },
+              {
+                key: "fediseer",
+                label: "Fediseer",
+                getNode: isSelected => (
+                  <div
+                    className={classNames("tab-pane", {
+                      active: isSelected,
+                    })}
+                    role="tabpanel"
+                    id="banned_users-tab-pane"
+                  >
+                    {this.fediseerAdmin()}
+                  </div>
+                ),
+              },
+            ]}
+          />
+          :
+          <Tabs
+            tabs={[
+              {
+                key: "settings",
+                label: I18NextService.i18n.t("settings"),
+                getNode: this.userSettings,
+              },
+              {
+                key: "blocks",
+                label: I18NextService.i18n.t("blocks"),
+                getNode: this.blockCards,
+              }
+            ]}
+          />
+        }
       </div>
     );
   }
@@ -1347,10 +1368,6 @@ export class Settings extends Component<any, SettingsState> {
   }
 
   fediseerAdmin() {
-    //TODO: if Fediseer is off hide tab
-    //TODO: hide admin section from non admins
-    //TODO: create map of settings, print key in "currently on", write key to localstorage and use it to handle hiding logic
-
     return (
       <div className="row">
         {/* User settings */}
@@ -1421,40 +1438,41 @@ export class Settings extends Component<any, SettingsState> {
         </div>
 
 
-        {/* Admin settngs */}
-        <div className="col-12 col-md-6">
-          <div className="card border-secondary mb-3">
-            <div className="card-body">
-              < h2 className="h4 mb-3" style="text-transform: capitalize;" > {I18NextService.i18n.t("admin")}</h2 >
-              <p>
-                Only administrators may view this section. From here, you can integrate the Fediseer API with your Lemmy instance.
-              </p>
-              <p>
-                Once an API key has been set up through this page, it will provide you access to Fediseer directly from the Lemmy interface. The following actions are available:
-                <ul class="mt-1">
-                  <li>Guaranteeing</li>
-                  <li>Endorsing</li>
-                  <li>Hesitating</li>
-                  <li>Censoring</li>
-                </ul>
-                To learn more about the meaning of these terms, please visit the <a href={fediseerInfo}>Fediseer Glossary</a>.
-              </p>
-              <h2 class="h6 mb-2 fw-semibold">Your API key</h2>
-              <i>If you don't have an API key you can claim one from the <a href="https://gui.fediseer.com/auth/claim-instance">Fediseer GUI</a>.</i>
-              <div class="d-flex flex-row gap-3 mb-3 mt-2">
-                <input class="form-control" type="text" id="site-desc" placeholder="Enter your key..." value={this.state.fediseerKey} onInput={this.handleKeyChange} />
-                <button class="btn btn-secondary me-2" type="submit" onClick={this.handleKeySave}>Save</button>
+        {/* Admin settings */}
+        {amAdmin() &&
+          <div className="col-12 col-md-6">
+            <div className="card border-secondary mb-3">
+              <div className="card-body">
+                < h2 className="h4 mb-3" style="text-transform: capitalize;" > {I18NextService.i18n.t("admin")}</h2 >
+                <p>
+                  Only administrators may view this section. From here, you can integrate the Fediseer API with your Lemmy instance.
+                </p>
+                <p>
+                  Once an API key has been set up through this page, it will provide you access to Fediseer directly from the Lemmy interface. The following actions are available:
+                  <ul class="mt-1">
+                    <li>Guaranteeing</li>
+                    <li>Endorsing</li>
+                    <li>Hesitating</li>
+                    <li>Censoring</li>
+                  </ul>
+                  To learn more about the meaning of these terms, please visit the <a href={fediseerInfo}>Fediseer Glossary</a>.
+                </p>
+                <h2 class="h6 mb-2 fw-semibold">Your API key</h2>
+                <i>If you don't have an API key you can claim one from the <a href="https://gui.fediseer.com/auth/claim-instance">Fediseer GUI</a>.</i>
+                <div class="d-flex flex-row gap-3 mb-3 mt-2">
+                  <input class="form-control" type="text" id="site-desc" placeholder="Enter your key..." value={this.state.fediseerKey} onInput={this.handleKeyChange} />
+                  <button class="btn btn-secondary me-2" type="submit" onClick={this.handleKeySave}>Save</button>
+                </div>
+                <p>
+                  The key will be saved locally and only used when interacting with Fediseer. Your instance's server will never receive it.
+                  <br />
+                  If you change browser or log from a different machine you'll have to re-insert the key.
+                </p>
               </div>
-              <p>
-                The key will be saved locally and only used when interacting with Fediseer. Your instance's server will never receive it.
-                <br />
-                If you change browser or log from a different machine you'll have to re-insert the key.
-              </p>
             </div>
           </div>
-        </div>
+        }
       </div>
-
     );
   }
 
