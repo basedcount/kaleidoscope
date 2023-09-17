@@ -1,4 +1,6 @@
 import type { Response } from "express";
+import { fediseerApi } from "./config";
+import { HttpService } from "./services";
 
 export interface EnvVarsType {
     DISCORD_URL?: string;
@@ -30,6 +32,7 @@ export class EnvVars {
     static GIT_REPOSITORY?: string;
     static ENABLE_USER_FLAIRS = false;
     static ENABLE_FEDISEER = true;
+    static FEDISEER: null | { endorsements: string[], hesitations: string[], censures: string[] };
 
     static async setEnvVars() {
         try {
@@ -44,9 +47,49 @@ export class EnvVars {
             EnvVars.ENABLE_USER_FLAIRS = env.ENABLE_USER_FLAIRS;
             EnvVars.ENABLE_FEDISEER = env.ENABLE_FEDISEER;
 
+            const domain = await (async () => {
+                return 'lemmy.world';   //TODO: change this
+
+                // const site = await HttpService.client.getSite();
+
+                // if (site.state !== 'success') return null;
+
+                // return new URL(site.data.site_view.site.actor_id).host;
+            })();
+
+            if (domain === null) {
+                EnvVars.FEDISEER = null;
+            } else {
+                EnvVars.FEDISEER = await getFediseerData(env.ENABLE_FEDISEER, domain);
+            }
+
             this.#fetched = true;
         } catch (e) {
             console.error(e);
         }
+    }
+}
+
+async function getFediseerData(enabled: boolean, domain: string) {
+    if (!enabled) return null;
+
+    try {
+        const endorsements = await fetchFediseer('approvals', domain);
+        const hesitations = await fetchFediseer('hesitations_given', domain);
+        const censures = await fetchFediseer('censures_given', domain);
+
+        return { endorsements, hesitations, censures }
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+
+    async function fetchFediseer(endpoint: string, domain: string) {
+        const res = await fetch(`${fediseerApi}/v1/${endpoint}/${domain}?domains=true`);
+
+        if (!res.ok) throw new Error(res.statusText);
+        const json = await res.json() as { domains: string[] };
+
+        return json.domains;
     }
 }

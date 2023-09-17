@@ -1379,7 +1379,7 @@ export class Settings extends Component<any, SettingsState> {
                 Your instance is part of the <strong>Fediseer network</strong>. Because of this, you may optionally enable an automated content filtering system to remove untrusted actors from your feed.
               </p>
               <p>
-                The filter is configured according to the <i>endorsements</i>, <i>hesitations</i> and <i>censors</i> submitted by the <strong>{this.state.siteRes.site_view.site.name}</strong> admin team through Fediseer.
+                The filter is configured according to the <i>endorsements</i>, <i>hesitations</i> and <i>censurs</i> submitted by the <strong>{this.state.siteRes.site_view.site.name}</strong> admin team through Fediseer.
                 Check out the <a href={fediseerInfo}>Fediseer Glossary</a> to learn more. The filter is disabled by default.
               </p>
 
@@ -1401,7 +1401,7 @@ export class Settings extends Component<any, SettingsState> {
                         Remove dangerous content (moderate)
                       </span>
                       <small>
-                        Content from <i>censored</i> instances won't be shown
+                        Content from <i>censured</i> instances won't be shown
                       </small>
                     </label>
                   </li>
@@ -1453,7 +1453,7 @@ export class Settings extends Component<any, SettingsState> {
                     <li>Guaranteeing</li>
                     <li>Endorsing</li>
                     <li>Hesitating</li>
-                    <li>Censoring</li>
+                    <li>Censuring</li>
                   </ul>
                   To learn more about the meaning of these terms, please visit the <a href={fediseerInfo}>Fediseer Glossary</a>.
                 </p>
