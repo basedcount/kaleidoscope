@@ -98,6 +98,10 @@ import { Sidebar } from "../community/sidebar";
 import { SiteSidebar } from "../home/site-sidebar";
 import { PostListings } from "../post/post-listings";
 import { CommunityLink } from "./community-link";
+import { amAdmin } from "@utils/roles";
+import { EnvVars } from "../../get-env-vars";
+import { isBrowser } from "@utils/browser";
+import Fediseer from "../fediseer";
 
 type CommunityData = RouteDataResponse<{
   communityRes: GetCommunityResponse;
@@ -228,6 +232,8 @@ export class Community extends Component<
     }
 
     setupTippy();
+
+    await EnvVars.setEnvVars();
   }
 
   static async fetchInitialData({
@@ -396,6 +402,9 @@ export class Community extends Component<
           onPurgeCommunity={this.handlePurgeCommunity}
           onEditCommunity={this.handleEditCommunity}
         />
+        {res.community_view.community.local && amAdmin() && EnvVars.ENABLE_FEDISEER && isBrowser() &&
+          <Fediseer actor_id={res.community_view.community.actor_id} />
+        }
         {!res.community_view.community.local && res.site && (
           <SiteSidebar site={res.site} showLocal={showLocal(this.isoData)} />
         )}

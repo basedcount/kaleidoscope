@@ -38,8 +38,7 @@ export class SiteSidebar extends Component<SiteSidebarProps, SiteSidebarState> {
     await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_FEDISEER) return;
 
-    // const url = `${fediseerApi}/v1/whitelist/${this.domain}`; //Request to the Fediseer API
-    const url = `${fediseerApi}/v1/whitelist/lemmy.basedcount.com`; //Request to the Fediseer API
+    const url = `${fediseerApi}/v1/whitelist/${this.domain}`; //Request to the Fediseer API
 
     const res = await fetch(url, {
       method: "HEAD",

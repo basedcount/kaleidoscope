@@ -10,7 +10,7 @@ import {
   setIsoData,
   updatePersonBlock,
 } from "@utils/app";
-import { restoreScrollPosition, saveScrollPosition } from "@utils/browser";
+import { isBrowser, restoreScrollPosition, saveScrollPosition } from "@utils/browser";
 import {
   capitalizeFirstLetter,
   futureDaysToUnixTime,
@@ -20,7 +20,7 @@ import {
   numToSI,
   randomStr,
 } from "@utils/helpers";
-import { canMod, isAdmin, isBanned } from "@utils/roles";
+import { amAdmin, canMod, isAdmin, isBanned } from "@utils/roles";
 import type { QueryParams } from "@utils/types";
 import { RouteDataResponse } from "@utils/types";
 import classNames from "classnames";
@@ -90,6 +90,8 @@ import { UserBadges } from "../common/user-badges";
 import { CommunityLink } from "../community/community-link";
 import { PersonDetails } from "./person-details";
 import { PersonListing } from "./person-listing";
+import { EnvVars } from "../../get-env-vars";
+import Fediseer from "../fediseer";
 
 type ProfileData = RouteDataResponse<{
   personResponse: GetPersonDetailsResponse;
@@ -226,6 +228,7 @@ export class Profile extends Component<
       await this.fetchUserData();
     }
     setupTippy();
+    await EnvVars.setEnvVars();
   }
 
   componentWillUnmount() {
@@ -385,6 +388,9 @@ export class Profile extends Component<
             <div className="col-12 col-md-4">
               <Moderates moderates={personRes.moderates} />
               {this.amCurrentUser && <Follows />}
+              {personRes.person_view.person.local && amAdmin() && EnvVars.ENABLE_FEDISEER && isBrowser() &&
+                <Fediseer actor_id={personRes.person_view.person.actor_id} />
+              }
             </div>
           </div>
         );
@@ -510,9 +516,8 @@ export class Profile extends Component<
                 {!this.amCurrentUser && UserService.Instance.myUserInfo && (
                   <>
                     <a
-                      className={`d-flex align-self-start btn btn-secondary me-2 ${
-                        !pv.person.matrix_user_id && "invisible"
-                      }`}
+                      className={`d-flex align-self-start btn btn-secondary me-2 ${!pv.person.matrix_user_id && "invisible"
+                        }`}
                       rel={relTags}
                       href={`https://matrix.to/#/${pv.person.matrix_user_id}`}
                     >
