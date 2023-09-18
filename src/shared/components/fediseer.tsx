@@ -11,6 +11,10 @@ interface FediseerState {
   site: string;
   key: string | null;
   loading: boolean;
+  return: {
+    ok: boolean,
+    message: string,
+  }
 }
 
 export default class Fediseer extends Component<FediseerProps, FediseerState> {
@@ -20,8 +24,13 @@ export default class Fediseer extends Component<FediseerProps, FediseerState> {
       action: undefined,
       reason: '',
       site: new URL(this.props.actor_id).host,
+      // site: 'overctrl.dbzer0.com', //TEST HOST
       key: localStorage.getItem('FEDISEER_KEY'),
-      loading: false
+      loading: false,
+      return: {
+        ok: false,
+        message: '',
+      }
     };
   }
 
@@ -47,13 +56,25 @@ export default class Fediseer extends Component<FediseerProps, FediseerState> {
                 <button type="button" class={`btn btn-outline-danger ${this.state?.action === 'censures' ? 'active' : ''}`} value="censures" onClick={this.handleActionChoice}>Censure</button>
               </div>
               {this.state?.action !== undefined &&
-                <div class="d-flex flex-row column-gap-2 mt-3">
-                  <input class="form-control" id="fediseer-reason" type="text" placeholder="Reason (optional)" value={this.state.reason} onInput={this.handleReasonChange} />
-                  {!this.state.loading ?
-                    <button type="button" class="btn btn-primary" onclick={this.sendRequest}>Confirm</button> :
-                    <button type="button" class="btn btn-primary" onclick={this.sendRequest} disabled>Confirm</button>
+                <>
+                  <div class="d-flex flex-row column-gap-2 mt-3">
+                    <input class="form-control" id="fediseer-reason" type="text" placeholder="Reason (optional)" value={this.state.reason} onInput={this.handleReasonChange} />
+                    {!this.state.loading ?
+                      <button type="button" class="btn btn-primary" onclick={this.sendRequest}>Confirm</button> :
+                      <button type="button" class="btn btn-primary" onclick={this.sendRequest} disabled>Confirm</button>
+                    }
+                  </div>
+                </>
+              }
+              {this.state?.action === undefined && this.state?.return.message !== '' &&
+                <>
+                  {this.state?.return.ok === true &&
+                    <p class="mt-3 text-success">Fediseer action submitted succesfully.</p>
                   }
-                </div>
+                  {this.state?.return.ok !== true &&
+                    <p class="mt-3 text-danger">{this.state?.return.message}</p>
+                  }
+                </>
               }
             </>
           ) : (
@@ -75,16 +96,20 @@ export default class Fediseer extends Component<FediseerProps, FediseerState> {
   sendRequest = async () => {
     this.setState({ loading: true });
 
-    const res = await fetch(`${fediseerApi}/v1/${this.state?.action}/${this.state?.site}`, {
-      method: 'PUT',
-      headers: {
-        "Content-type": "application/json",
-        apikey: this.state?.key ?? ''
-      },
-      body: JSON.stringify({ reason: this.state?.reason })
-    });
+    try {
+      const res = await fetch(`${fediseerApi}/v1/${this.state?.action}/${this.state?.site}`, {
+        method: 'PUT',
+        headers: {
+          "Content-type": "application/json",
+          apikey: this.state?.key ?? ''
+        },
+        body: JSON.stringify({ reason: this.state?.reason })
+      });
 
-    if (res.ok) this.setState({ action: undefined, reason: '', loading: false });
-    else this.setState({ loading: false });
+      const json = await res.json() as { message: string };
+      this.setState({ action: undefined, reason: '', loading: false, return: { ok: res.ok, message: json.message } });
+    } catch (e) {
+      this.setState({ action: undefined, reason: '', loading: false, return: { ok: false, message: e } });
+    }
   }
 }
