@@ -34,7 +34,7 @@ export class EnvVars {
     static GIT_REPOSITORY?: string;
     static ENABLE_USER_FLAIRS = false;
     static ENABLE_FEDISEER = true;
-    static FEDISEER: null | { endorsements: string[], hesitations: string[], censures: string[] };
+    static FEDISEER: Promise<null | { endorsements: string[], hesitations: string[], censures: string[] }>;
 
     static async setEnvVars() {
         try {
@@ -62,11 +62,7 @@ export class EnvVars {
                 // return new URL(site.data.site_view.site.actor_id).host;
             })();
 
-            if (domain === null) {
-                EnvVars.FEDISEER = null;
-            } else {
-                EnvVars.FEDISEER = await getFediseerData(env.ENABLE_FEDISEER, domain);
-            }
+            EnvVars.FEDISEER = getFediseerData(env.ENABLE_FEDISEER, domain);
 
             this.#fetched = true;
             this.#loading = false;
@@ -77,13 +73,17 @@ export class EnvVars {
     }
 }
 
-async function getFediseerData(enabled: boolean, domain: string) {
-    if (!enabled) return null;
+async function getFediseerData(enabled: boolean, domain: string | null) {
+    if (!enabled || domain === null) return null;
 
     try {
         const endorsements = await fetchFediseer('approvals', domain);
         const hesitations = await fetchFediseer('hesitations_given', domain);
         const censures = await fetchFediseer('censures_given', domain);
+
+        // DEV STUFF IN HERE - TEMP
+        endorsements.push('localhost');
+        // END DEV STUFF
 
         return { endorsements, hesitations, censures }
     } catch (e) {
