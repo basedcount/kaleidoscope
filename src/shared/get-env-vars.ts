@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { fediseerApi } from "./config";
-import { HttpService } from "./services";
+import { isBrowser } from "@utils/browser";
+// import { HttpService } from "./services";
 
 export interface EnvVarsType {
     DISCORD_URL?: string;
@@ -40,7 +41,9 @@ export class EnvVars {
             if (this.#fetched || this.#loading) return;  // We assume that the env vars won't change during runtime, we fetch them once and save them in the static propreties
             this.#loading = true; //Only allow one request at a time to be processed
 
-            const res = await fetch('/env');
+            const res = isBrowser()
+                ? await fetch('/env')
+                : await fetch(`http://${process.env.LEMMY_UI_HOST ?? '0.0.0.0:1234'}/env`);
             const env = await res.json();
 
             EnvVars.DISCORD_URL = env.DISCORD_URL;
