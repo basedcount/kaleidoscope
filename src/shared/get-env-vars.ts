@@ -27,6 +27,7 @@ export default async ({ res }: { res: Response }) => {
 // Client - fetch what gets exported by the server, only once at startup
 export class EnvVars {
     static #fetched = false;
+    static #loading = false;
     static DISCORD_URL?: string;
     static DONATION_URL?: string;
     static GIT_REPOSITORY?: string;
@@ -36,7 +37,8 @@ export class EnvVars {
 
     static async setEnvVars() {
         try {
-            if (this.#fetched) return;  // We assume that the env vars won't change during runtime, we fetch them once and save them in the static propreties
+            if (this.#fetched || this.#loading) return;  // We assume that the env vars won't change during runtime, we fetch them once and save them in the static propreties
+            this.#loading = true; //Only allow one request at a time to be processed
 
             const res = await fetch('/env');
             const env = await res.json();
@@ -64,7 +66,9 @@ export class EnvVars {
             }
 
             this.#fetched = true;
+            this.#loading = false;
         } catch (e) {
+            this.#loading = false;
             console.error(e);
         }
     }
