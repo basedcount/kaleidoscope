@@ -77,9 +77,11 @@ async function getFediseerData(enabled: boolean, domain: string | null) {
     if (!enabled || domain === null) return null;
 
     try {
-        const endorsements = await fetchFediseer('approvals', domain);
-        const hesitations = await fetchFediseer('hesitations_given', domain);
-        const censures = await fetchFediseer('censures_given', domain);
+        const [endorsements, hesitations, censures] = await Promise.all([
+            fetchFediseer('approvals', domain),
+            fetchFediseer('hesitations_given', domain),
+            fetchFediseer('censures_given', domain),
+        ]);
 
         // DEV STUFF IN HERE - TEMP
         endorsements.push('localhost');
