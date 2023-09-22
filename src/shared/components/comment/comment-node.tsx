@@ -72,6 +72,7 @@ import ReportForm from "../common/report-form";
 import { getUserFlair } from "@utils/helpers/user-flair-type";
 import { FetchUserFlair } from "../common/user-flair";
 import { EnvVars } from "../../get-env-vars";
+import { FediseerIcon } from "./fediseer-icon";
 
 
 interface CommentNodeState {
@@ -292,12 +293,6 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
       node.children.length === 0 &&
       node.comment_view.counts.child_count > 0;
 
-    const instanceDomain = new URL(cv.community.actor_id).host;
-
-    const isInstanceEndorsed = this.state.fediseer?.endorsements.includes(instanceDomain);
-    const isInstanceHesitated = this.state.fediseer?.hesitations.includes(instanceDomain);
-    const isInstanceCensured = this.state.fediseer?.censures.includes(instanceDomain);
-
     return (
       <li className="comment list-unstyled">
         <article
@@ -328,10 +323,6 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
                 classNames="py-1 ms-1"
               />
 
-              {isInstanceEndorsed && (
-                <p>ENDORSED!</p>
-              )}
-
               {cv.comment.distinguished && (
                 <Icon icon="shield" inline classes="text-danger ms-1" />
               )}
@@ -356,6 +347,8 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
               )}
 
               {this.getLinkButton(true)}
+
+              <FediseerIcon fediseer={this.state.fediseer} instance={cv.community.actor_id}/>
 
               {cv.comment.language_id !== 0 && (
                 <span className="badge text-bg-light d-none d-sm-inline me-2">
