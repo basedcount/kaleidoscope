@@ -1,4 +1,4 @@
-# Kaleidoscope (currently in development)
+# Kaleidoscope
 
 Kaleidoscope is a fork and expansion of the official [lemmy-ui](https://github.com/LemmyNet/lemmy-ui) project.
 
