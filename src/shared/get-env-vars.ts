@@ -83,12 +83,6 @@ async function getFediseerData(enabled: boolean, domain: string | null) {
             fetchFediseer('censures_given', domain),
         ]);
 
-        // DEV STUFF IN HERE - TEMP
-        // endorsements.push('localhost');
-        hesitations.push('localhost');
-        // censures.push('localhost');
-        // END DEV STUFF
-
         return { endorsements, hesitations, censures }
     } catch (e) {
         console.error(e);

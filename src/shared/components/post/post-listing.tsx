@@ -65,6 +65,8 @@ import { PostForm } from "./post-form";
 import ReportForm from "../common/report-form";
 import { getUserFlair } from "@utils/helpers/user-flair-type";
 import { FetchUserFlair } from "../common/user-flair";
+import { EnvVars } from "../../get-env-vars";
+import { FediseerIcon } from "../fediseer-icon";
 
 interface PostListingState {
   showEdit: boolean;
@@ -98,6 +100,7 @@ interface PostListingState {
   addModLoading: boolean;
   addAdminLoading: boolean;
   transferLoading: boolean;
+  fediseer: null | { endorsements: string[], hesitations: string[], censures: string[] };
 }
 
 interface PostListingProps {
@@ -164,6 +167,7 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
     addModLoading: false,
     addAdminLoading: false,
     transferLoading: false,
+    fediseer: null,
   };
 
   constructor(props: any, context: any) {
@@ -200,6 +204,11 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
 
   get postView(): PostView {
     return this.props.post_view;
+  }
+
+  async componentDidMount() {
+    await EnvVars.setEnvVars();
+    this.setState({ fediseer: await EnvVars.FEDISEER });
   }
 
   render() {
@@ -417,7 +426,7 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
     const post_view = this.postView;
 
     return (
-      <div className="small mb-1 mb-md-0">
+      <div className="small mb-1 mb-md-0 d-flex flex-row gap-1 align-items-baseline">
         <PersonListing person={post_view.creator} />
 
           <FetchUserFlair
@@ -426,7 +435,6 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
           />
           
           <UserBadges
-          classNames="ms-1"
           isMod={this.creatorIsMod_}
           isAdmin={this.creatorIsAdmin_}
           isBot={post_view.creator.bot_account}
@@ -446,8 +454,9 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
               )?.name
             }
           </span>
-        )}{" "}
-        •{" "}
+        )}
+        <FediseerIcon fediseer={this.state.fediseer} instance={post_view.community.actor_id}/>
+        {" "}•{" "}
         <MomentTime
           published={post_view.post.published}
           updated={post_view.post.updated}
