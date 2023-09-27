@@ -72,7 +72,7 @@ import ReportForm from "../common/report-form";
 import { getUserFlair } from "@utils/helpers/user-flair-type";
 import { FetchUserFlair } from "../common/user-flair";
 import { EnvVars } from "../../get-env-vars";
-import { FediseerIcon } from "./fediseer-icon";
+import { FediseerIcon } from "../fediseer-icon";
 
 
 interface CommentNodeState {
@@ -348,17 +348,19 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
 
               {this.getLinkButton(true)}
 
-              <FediseerIcon fediseer={this.state.fediseer} instance={cv.community.actor_id}/>
 
               {cv.comment.language_id !== 0 && (
                 <span className="badge text-bg-light d-none d-sm-inline me-2">
                   {
                     this.props.allLanguages.find(
                       lang => lang.id === cv.comment.language_id,
-                    )?.name
-                  }
+                      )?.name
+                    }
                 </span>
               )}
+
+              <FediseerIcon fediseer={this.state.fediseer} instance={cv.community.actor_id}/>
+              
               {/* This is an expanding spacer for mobile */}
               <div className="me-lg-5 flex-grow-1 flex-lg-grow-0 unselectable pointer mx-2" />
 

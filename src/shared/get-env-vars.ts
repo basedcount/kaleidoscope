@@ -84,8 +84,8 @@ async function getFediseerData(enabled: boolean, domain: string | null) {
         ]);
 
         // DEV STUFF IN HERE - TEMP
-        endorsements.push('localhost');
-        // hesitations.push('localhost');
+        // endorsements.push('localhost');
+        hesitations.push('localhost');
         // censures.push('localhost');
         // END DEV STUFF
 
