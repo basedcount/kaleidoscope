@@ -28,6 +28,7 @@ import {
 } from "lemmy-js-client";
 import { CommentNodeI, CommentViewType } from "../../interfaces";
 import { CommentNode } from "./comment-node";
+import { isBrowser } from "@utils/browser";
 
 interface CommentNodesProps {
   nodes: CommentNodeI[];
@@ -133,10 +134,19 @@ export class CommentNodes extends Component<CommentNodesProps, any> {
               onCommentReport={this.props.onCommentReport}
               onPurgePerson={this.props.onPurgePerson}
               onPurgeComment={this.props.onPurgeComment}
+              fediseerFilter={this.getFediseerFilter()}
             />
           ))}
         </ul>
       )
     );
+  }
+
+  getFediseerFilter() {
+    if (isBrowser()) {
+      return localStorage.getItem('FEDISEER_FILTER') as 'disabled' | 'moderate' | 'strict' | 'very-strict' ?? 'disabled';
+    }
+
+    return 'disabled';
   }
 }

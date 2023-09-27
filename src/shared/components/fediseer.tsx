@@ -24,7 +24,6 @@ export default class Fediseer extends Component<FediseerProps, FediseerState> {
       action: undefined,
       reason: '',
       site: new URL(this.props.actor_id).host,
-      // site: 'overctrl.dbzer0.com', //TEST HOST
       key: localStorage.getItem('FEDISEER_KEY'),
       loading: false,
       return: {

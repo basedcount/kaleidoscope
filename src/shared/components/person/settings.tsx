@@ -1450,7 +1450,6 @@ export class Settings extends Component<any, SettingsState> {
                 <p>
                   Once an API key has been set up through this page, it will provide you access to Fediseer directly from the Lemmy interface. The following actions are available:
                   <ul class="mt-1">
-                    <li>Guaranteeing</li>
                     <li>Endorsing</li>
                     <li>Hesitating</li>
                     <li>Censuring</li>

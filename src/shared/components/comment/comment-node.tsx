@@ -73,6 +73,7 @@ import { getUserFlair } from "@utils/helpers/user-flair-type";
 import { FetchUserFlair } from "../common/user-flair";
 import { EnvVars } from "../../get-env-vars";
 import { FediseerIcon } from "../fediseer-icon";
+import { fediseerFilter } from "@utils/fediseer-feed-filter";
 
 
 interface CommentNodeState {
@@ -150,6 +151,7 @@ interface CommentNodeProps {
   onCommentReport(form: CreateCommentReport): void;
   onPurgePerson(form: PurgePerson): void;
   onPurgeComment(form: PurgeComment): void;
+  fediseerFilter: 'disabled' | 'moderate' | 'strict' | 'very-strict' | undefined;
 }
 
 export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
@@ -292,6 +294,13 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
       !this.state.collapsed &&
       node.children.length === 0 &&
       node.comment_view.counts.child_count > 0;
+
+
+    if (this.props.fediseerFilter !== undefined) {
+      if (fediseerFilter(this.commentView.creator.actor_id, this.state.fediseer, this.props.fediseerFilter)) {
+        return (<></>)
+      }
+    }
 
     return (
       <li className="comment list-unstyled">

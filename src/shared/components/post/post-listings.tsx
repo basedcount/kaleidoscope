@@ -24,6 +24,7 @@ import {
 } from "lemmy-js-client";
 import { I18NextService } from "../../services";
 import { PostListing } from "./post-listing";
+import { isBrowser } from "@utils/browser";
 
 interface PostListingsProps {
   posts: PostView[];
@@ -98,6 +99,7 @@ export class PostListings extends Component<PostListingsProps, any> {
                 onAddAdmin={this.props.onAddAdmin}
                 onTransferCommunity={this.props.onTransferCommunity}
                 onMarkPostAsRead={this.props.onMarkPostAsRead}
+                fediseerFilter={this.getFediseerFilter()}
               />
               {idx + 1 !== this.posts.length && <hr className="my-3" />}
             </>
@@ -170,5 +172,13 @@ export class PostListings extends Component<PostListingsProps, any> {
     }
 
     return posts;
+  }
+
+  getFediseerFilter() {
+    if (isBrowser()) {
+      return localStorage.getItem('FEDISEER_FILTER') as 'disabled' | 'moderate' | 'strict' | 'very-strict' ?? 'disabled';
+    }
+
+    return 'disabled';
   }
 }

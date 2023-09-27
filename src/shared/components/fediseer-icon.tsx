@@ -14,7 +14,7 @@ export class FediseerIcon extends Component<IconProp, any> {
     const fediseer = this.props.fediseer;
     const domain = new URL(this.props.instance).host;
 
-    if (fediseer === null) return (<></>); //Fediseer disabled
+    if (fediseer == null) return (<></>); //Fediseer disabled
 
     if (fediseer.endorsements.includes(domain)) { //Endorsed
       const tooltip = "Fediseer - approved instance";

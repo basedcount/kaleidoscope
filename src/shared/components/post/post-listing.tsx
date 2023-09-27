@@ -67,6 +67,7 @@ import { getUserFlair } from "@utils/helpers/user-flair-type";
 import { FetchUserFlair } from "../common/user-flair";
 import { EnvVars } from "../../get-env-vars";
 import { FediseerIcon } from "../fediseer-icon";
+import { fediseerFilter } from "@utils/fediseer-feed-filter";
 
 interface PostListingState {
   showEdit: boolean;
@@ -136,6 +137,7 @@ interface PostListingProps {
   onAddAdmin(form: AddAdmin): void;
   onTransferCommunity(form: TransferCommunity): void;
   onMarkPostAsRead(form: MarkPostAsRead): void;
+  fediseerFilter: 'disabled' | 'moderate' | 'strict' | 'very-strict' | undefined;
 }
 
 export class PostListing extends Component<PostListingProps, PostListingState> {
@@ -213,6 +215,12 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
 
   render() {
     const post = this.postView.post;
+
+    if (this.props.fediseerFilter !== undefined) {
+      if (fediseerFilter(this.postView.creator.actor_id, this.state.fediseer, this.props.fediseerFilter)) {
+        return (<></>)
+      }
+    }
 
     return (
       <div className="post-listing mt-2">
