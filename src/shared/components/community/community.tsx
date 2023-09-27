@@ -402,9 +402,12 @@ export class Community extends Component<
           onPurgeCommunity={this.handlePurgeCommunity}
           onEditCommunity={this.handleEditCommunity}
         />
-        {res.community_view.community.local && amAdmin() && EnvVars.ENABLE_FEDISEER && isBrowser() &&
-          <Fediseer actor_id={res.community_view.community.actor_id} />
-        }
+        {!res.community_view.community.local &&
+          amAdmin() &&
+          EnvVars.ENABLE_FEDISEER &&
+          isBrowser() && (
+            <Fediseer actor_id={res.community_view.community.actor_id} />
+          )}
         {!res.community_view.community.local && res.site && (
           <SiteSidebar site={res.site} showLocal={showLocal(this.isoData)} />
         )}

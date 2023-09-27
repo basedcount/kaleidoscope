@@ -10,7 +10,11 @@ import {
   setIsoData,
   updatePersonBlock,
 } from "@utils/app";
-import { isBrowser, restoreScrollPosition, saveScrollPosition } from "@utils/browser";
+import {
+  isBrowser,
+  restoreScrollPosition,
+  saveScrollPosition,
+} from "@utils/browser";
 import {
   capitalizeFirstLetter,
   futureDaysToUnixTime,
@@ -388,9 +392,12 @@ export class Profile extends Component<
             <div className="col-12 col-md-4">
               <Moderates moderates={personRes.moderates} />
               {this.amCurrentUser && <Follows />}
-              {personRes.person_view.person.local && amAdmin() && EnvVars.ENABLE_FEDISEER && isBrowser() &&
-                <Fediseer actor_id={personRes.person_view.person.actor_id} />
-              }
+              {!personRes.person_view.person.local &&
+                amAdmin() &&
+                EnvVars.ENABLE_FEDISEER &&
+                isBrowser() && (
+                  <Fediseer actor_id={personRes.person_view.person.actor_id} />
+                )}
             </div>
           </div>
         );
@@ -516,8 +523,9 @@ export class Profile extends Component<
                 {!this.amCurrentUser && UserService.Instance.myUserInfo && (
                   <>
                     <a
-                      className={`d-flex align-self-start btn btn-secondary me-2 ${!pv.person.matrix_user_id && "invisible"
-                        }`}
+                      className={`d-flex align-self-start btn btn-secondary me-2 ${
+                        !pv.person.matrix_user_id && "invisible"
+                      }`}
                       rel={relTags}
                       href={`https://matrix.to/#/${pv.person.matrix_user_id}`}
                     >
