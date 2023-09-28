@@ -1379,7 +1379,7 @@ export class Settings extends Component<any, SettingsState> {
                 Your instance is part of the <strong>Fediseer network</strong>. Because of this, you may optionally enable an automated content filtering system to remove untrusted actors from your feed.
               </p>
               <p>
-                The filter is configured according to the <i>endorsements</i>, <i>hesitations</i> and <i>censurs</i> submitted by the <strong>{this.state.siteRes.site_view.site.name}</strong> admin team through Fediseer.
+                The filter is configured according to the <i>endorsements</i>, <i>hesitations</i> and <i>censures</i> submitted by the <strong>{this.state.siteRes.site_view.site.name}</strong> admin team through Fediseer.
                 Check out the <a href={fediseerInfo}>Fediseer Glossary</a> to learn more. The filter is disabled by default.
               </p>
 

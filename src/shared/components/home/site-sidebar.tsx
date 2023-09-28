@@ -143,7 +143,7 @@ export class SiteSidebar extends Component<SiteSidebarProps, SiteSidebarState> {
         <h6 class="mb-1 mt-1 font-monospace">Member of the <a href={fediseerInfo} class="fw-semibold" >Fediseer</a> network:</h6>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr);">
           <img src={`https://fediseer.com/api/v1/badges/guarantees/${this.domain}.svg`} alt="guarantor" class="me-4" />
-          <img src={`https://fediseer.com/api/v1/badges/endorsements/${this.domain}.com.svg`} alt="endorsements" />
+          <img src={`https://fediseer.com/api/v1/badges/endorsements/${this.domain}.svg`} alt="endorsements" />
         </div>
       </>
     )
