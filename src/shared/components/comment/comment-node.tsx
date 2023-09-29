@@ -368,7 +368,7 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
                 </span>
               )}
               <span class="ms-1"/>
-              <FediseerIcon fediseer={this.state.fediseer} instance={cv.community.actor_id}/>
+              <FediseerIcon fediseer={this.state.fediseer} instance={cv.creator.actor_id}/>
               
               {/* This is an expanding spacer for mobile */}
               <div className="me-lg-5 flex-grow-1 flex-lg-grow-0 unselectable pointer mx-2" />
