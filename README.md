@@ -4,6 +4,8 @@ Kaleidoscope is a fork and expansion of the official [lemmy-ui](https://github.c
 
 While this fork is mostly built for our own instance, we built it in the most modular and re-usable way possible, by tying each one of our additional features to a switch controlled by [environment varialbes](#configuration). Admins can selectively turn on and off all of the Kaleidoscope extra features, according to their needs and preferences.
 
+You can deploy Kaleidoscope by pulling the most recent version of the [Docker image](https://hub.docker.com/repository/docker/ornatot/kaleidoscope/general).
+
 # Features
 ### User flairs
 This is the big one. Thanks to our very own [flair](https://github.com/basedcount/flair) Rust microservice, we integrate a Reddit-like user flair systems.  
