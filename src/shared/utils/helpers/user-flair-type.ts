@@ -1,12 +1,13 @@
 import { Person, Community, CommunityModeratorView } from "lemmy-js-client";
 import { EnvVars } from "../../get-env-vars";
+import { isBrowser } from "@utils/browser";
 
-export interface UserFlairType {
-  name: string;               //Flair internal name (used for config purposes, eg: mod view)
-  displayed_name: string;     //Flair displayed name (visible on the website)
-  path?: string;              //Flair image, if present
-  community_actor_id: string; //Community where the flair exists
-  mod_only: boolean;           //Not gonna be available on release. If true, only mod will be able to select such a flair
+export interface UserFlairType { 
+  name: string;
+  display_name: string;
+  path: string | null;
+  community_actor_id: string;
+  mod_only: boolean;
 }
 
 export async function getUserFlair(user: Person | undefined, community: Community): Promise<UserFlairType | null> {
@@ -18,7 +19,7 @@ export async function getUserFlair(user: Person | undefined, community: Communit
 
     if (user === undefined) return null;
 
-    const res = await fetch(`http://localhost:6969/api/v1/user?id=${user.actor_id}&community=${community.actor_id}`);
+    const res = await fetch(`${getFlairsUrl()}/api/v1/user?user_actor_id=${user.actor_id}&community_actor_id=${community.actor_id}`);
 
     return res.json() as Promise<UserFlairType>;
   } catch (e) {
@@ -35,7 +36,7 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
     if (!community.local) return;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
 
 
-    await fetch("http://localhost:6969/api/v1/user", {
+    await fetch(`${getFlairsUrl()}/api/v1/user`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
@@ -43,7 +44,7 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
       body: JSON.stringify({
         user_actor_id: user.actor_id,
         community_actor_id: community.actor_id,
-        flair: newUserFlair.name
+        flair_name: newUserFlair.name
       })
     });
 
@@ -59,7 +60,7 @@ export async function clearUserFlair(user: Person, community: Community) {
 
     if (!community.local) return;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
 
-    await fetch("http://localhost:6969/api/v1/user", {
+    await fetch(`${getFlairsUrl()}/api/v1/user`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json"
@@ -93,7 +94,7 @@ export async function getUserFlairList(requester: Person | undefined, moderators
       }
     }
 
-    const res = await fetch(`http://localhost:6969/api/v1/community?id=${community.actor_id}&mod_only=${modOnly}`);
+    const res = await fetch(`${getFlairsUrl()}/api/v1/community?community_actor_id=${community.actor_id}&mod_only=${modOnly}`);
 
     return res.json() as Promise<UserFlairType[]>;
   } catch (e) {
@@ -102,3 +103,7 @@ export async function getUserFlairList(requester: Person | undefined, moderators
   }
 }
 
+function getFlairsUrl(){
+  if(isBrowser()) return('/flair');
+  return `http://${process.env.LEMMY_UI_HOST ?? "localhost:1236"}/flair`;
+}

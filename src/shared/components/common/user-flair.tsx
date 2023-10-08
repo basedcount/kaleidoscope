@@ -27,8 +27,8 @@ export class UserFlair extends Component<UserFlairProps> {
         <div
           className={classNames("badge text-dark d-inline px-1", this.props.classNames)}
         >
-          {flair.path !== undefined && (<img src={flair.path} style={`height:${this.props.imageSize || "1rem"};`} />)}
-          <span class="ms-1 fw-semibold"> {flair.name} </span>
+          {flair.path !== null && (<img src={flair.path} style={`height:${this.props.imageSize || "1rem"};`} />)}
+          <span class="ms-1 fw-semibold"> {flair.display_name} </span>
         </div>
       )
     );
