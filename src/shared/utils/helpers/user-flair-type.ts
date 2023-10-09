@@ -1,8 +1,9 @@
 import { Person, Community, CommunityModeratorView } from "lemmy-js-client";
 import { EnvVars } from "../../get-env-vars";
 import { isBrowser } from "@utils/browser";
+import { myAuth } from "@utils/app";
 
-export interface UserFlairType { 
+export interface UserFlairType {
   name: string;
   display_name: string;
   path: string | null;
@@ -39,7 +40,8 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
     await fetch(`${getFlairsUrl()}/api/v1/user`, {
       method: "PUT",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${myAuth()}`
       },
       body: JSON.stringify({
         user_actor_id: user.actor_id,
@@ -63,7 +65,8 @@ export async function clearUserFlair(user: Person, community: Community) {
     await fetch(`${getFlairsUrl()}/api/v1/user`, {
       method: "DELETE",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${myAuth()}`
       },
       body: JSON.stringify({
         user_actor_id: user.actor_id,
@@ -94,7 +97,12 @@ export async function getUserFlairList(requester: Person | undefined, moderators
       }
     }
 
-    const res = await fetch(`${getFlairsUrl()}/api/v1/community?community_actor_id=${community.actor_id}&mod_only=${modOnly}`);
+    const res = await fetch(`${getFlairsUrl()}/api/v1/community?community_actor_id=${community.actor_id}&mod_only=${modOnly}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${myAuth()}`
+      },
+    });
 
     return res.json() as Promise<UserFlairType[]>;
   } catch (e) {
@@ -103,7 +111,17 @@ export async function getUserFlairList(requester: Person | undefined, moderators
   }
 }
 
-function getFlairsUrl(){
-  if(isBrowser()) return('/flair');
+export async function getCommunitiesWithFlairs() {
+  try{
+    const res = await fetch(`${getFlairsUrl}/api/v1/setup`);
+    return await res.json() as string[];
+  } catch(e) {
+    console.log(e)
+    return [];
+  }
+}
+
+function getFlairsUrl() {
+  if (isBrowser()) return ('/flair');
   return `http://${process.env.LEMMY_UI_HOST ?? "localhost:1236"}/flair`;
 }
