@@ -111,11 +111,58 @@ export async function getUserFlairList(requester: Person | undefined, moderators
   }
 }
 
+export async function modAddFlair(flair: UserFlairType) {
+  try {
+    await EnvVars.setEnvVars();
+    if (!EnvVars.ENABLE_USER_FLAIRS) return;
+
+    await fetch(`${getFlairsUrl()}/api/v1/community`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${myAuth()}`
+      },
+      body: JSON.stringify({
+        name: flair.name,
+        display_name: flair.display_name,
+        path: flair.path,
+        community_actor_id: flair.community_actor_id,
+        mod_only: flair.mod_only,
+      })
+    });
+
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function modDeleteFlair(flair: UserFlairType) {
+  try {
+    await EnvVars.setEnvVars();
+    if (!EnvVars.ENABLE_USER_FLAIRS) return;
+
+    await fetch(`${getFlairsUrl()}/api/v1/community`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${myAuth()}`
+      },
+      body: JSON.stringify({
+        name: flair.name,
+        community_actor_id: flair.community_actor_id,
+      })
+    });
+
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 export async function getCommunitiesWithFlairs() {
-  try{
+  try {
     const res = await fetch(`${getFlairsUrl}/api/v1/setup`);
     return await res.json() as string[];
-  } catch(e) {
+  } catch (e) {
     console.log(e)
     return [];
   }
