@@ -5,8 +5,8 @@ new_tag="$1"
 
 # Old deploy
 # sudo docker build . --tag dessalines/lemmy-ui:$new_tag --platform=linux/amd64 --push
-sudo docker build . --tag ornatot/kaleidoscope:$new_tag --platform=linux/amd64
-sudo docker push ornatot/kaleidoscope:$new_tag
+docker build . --tag ornatot/kaleidoscope:$new_tag --platform=linux/amd64
+docker push ornatot/kaleidoscope:$new_tag
 
 # New deploy - I don't know how to set this one up
 # # Upgrade version
