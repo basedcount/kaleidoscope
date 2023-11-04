@@ -1,6 +1,6 @@
 import { fediseerApi } from "./config";
 import { HttpService } from "./services";
-import { ENV } from "./env";
+import { ENV } from "../assets/env.js";
 
 export interface EnvVarsType {
   DISCORD_URL?: string;

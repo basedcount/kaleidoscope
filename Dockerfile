@@ -25,7 +25,6 @@ COPY .git .git
 
 # Set UI version 
 RUN echo "export const VERSION = 'Kaleidoscope $(git describe --tag)';" > "src/shared/version.ts"
-RUN echo "export const ENV = { ENABLE_USER_FLAIRS: '$ENABLE_USER_FLAIRS', ENABLE_FEDISEER: '$ENABLE_FEDISEER', DISCORD_URL: '$DISCORD_URL', DONATION_URL: '$DONATION_URL', GIT_REPOSITORY: '$GIT_REPOSITORY', };" > "src/shared/env.ts"
 
 RUN yarn --production --prefer-offline
 RUN NODE_OPTIONS="--max-old-space-size=8192" yarn build:prod
@@ -43,9 +42,14 @@ FROM node:alpine as runner
 COPY --from=builder /usr/src/app/dist /app/dist
 COPY --from=builder /usr/src/app/node_modules /app/node_modules
 
+# Copy the script
+COPY inject-env.sh /app/inject-env.sh
+# Make it executable
+RUN chmod +x /app/inject-env.sh
+
 RUN chown -R node:node /app
 
 USER node
 EXPOSE 1234
 WORKDIR /app
-CMD node dist/js/server.js
+CMD /app/inject-env.sh && node dist/js/server.js
