@@ -47,7 +47,7 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
         user_actor_id: user.actor_id,
         community_actor_id: community.actor_id,
         flair_name: newUserFlair.name,
-        instance_domain: process.env.LEMMY_UI_HOST, //this is undefined on browser (only exists on server) - pass down along to everything else, but if possible write to file instead (docker)
+        instance_domain: EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST, //this is undefined on browser (only exists on server) - pass down along to everything else, but if possible write to file instead (docker)
       })
     });
 
@@ -72,7 +72,7 @@ export async function clearUserFlair(user: Person, community: Community) {
       body: JSON.stringify({
         user_actor_id: user.actor_id,
         community_actor_id: community.actor_id,
-        instance_domain: process.env.LEMMY_UI_HOST,
+        instance_domain: EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST,
       })
     });
 
@@ -130,7 +130,7 @@ export async function modAddFlair(flair: UserFlairType) {
         path: flair.path,
         community_actor_id: flair.community_actor_id,
         mod_only: flair.mod_only,
-        instance_domain: process.env.LEMMY_UI_HOST,
+        instance_domain: EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST,
       })
     });
 
@@ -153,7 +153,7 @@ export async function modDeleteFlair(flair: UserFlairType) {
       body: JSON.stringify({
         name: flair.name,
         community_actor_id: flair.community_actor_id,
-        instance_domain: process.env.LEMMY_UI_HOST,
+        instance_domain: EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST,
       })
     });
 
@@ -175,5 +175,5 @@ export async function getCommunitiesWithFlairs() {
 function getFlairsUrl() {
   return `http://localhost:1236/flair`;
   if (isBrowser()) return ('/flair');
-  return `http://${process.env.LEMMY_UI_HOST ?? "localhost:1236"}/flair`;
+  return `http://${EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST ?? "localhost:1236"}/flair`;
 }

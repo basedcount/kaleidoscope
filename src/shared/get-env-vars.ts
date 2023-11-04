@@ -3,22 +3,24 @@ import { HttpService } from "./services";
 import { ENV } from "../assets/env.js";
 
 export interface EnvVarsType {
+  ENABLE_USER_FLAIRS: boolean;
+  ENABLE_FEDISEER: boolean;
   DISCORD_URL?: string;
   DONATION_URL?: string;
   GIT_REPOSITORY?: string;
-  ENABLE_USER_FLAIRS: boolean;
-  ENABLE_FEDISEER: boolean;
+  LEMMY_UI_LEMMY_EXTERNAL_HOST: string;
 }
 
 // Client - fetch what gets exported by the server, only once at startup
 export class EnvVars {
   static #fetched = false;
   static #loading = false;
+  static ENABLE_USER_FLAIRS = false;
+  static ENABLE_FEDISEER = true;
   static DISCORD_URL?: string;
   static DONATION_URL?: string;
   static GIT_REPOSITORY?: string;
-  static ENABLE_USER_FLAIRS = false;
-  static ENABLE_FEDISEER = true;
+  static LEMMY_UI_LEMMY_EXTERNAL_HOST: string;
   static FEDISEER: Promise<null | {
     endorsements: string[];
     hesitations: string[];
@@ -32,11 +34,12 @@ export class EnvVars {
 
       const ENABLE_FEDISEER = ENV.ENABLE_FEDISEER === 'true';
 
+      EnvVars.ENABLE_USER_FLAIRS = ENV.ENABLE_USER_FLAIRS === 'true';
+      EnvVars.ENABLE_FEDISEER = ENABLE_FEDISEER;
       EnvVars.DISCORD_URL = ENV.DISCORD_URL.length > 0 ? ENV.DISCORD_URL : undefined;
       EnvVars.DONATION_URL = ENV.DONATION_URL.length > 0 ? ENV.DONATION_URL : undefined;
       EnvVars.GIT_REPOSITORY = ENV.GIT_REPOSITORY.length > 0 ? ENV.GIT_REPOSITORY : undefined;
-      EnvVars.ENABLE_USER_FLAIRS = ENV.ENABLE_USER_FLAIRS === 'true';
-      EnvVars.ENABLE_FEDISEER = ENABLE_FEDISEER;
+      EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST = ENV.LEMMY_UI_LEMMY_EXTERNAL_HOST;
 
       const domain = await (async () => {
         const site = await HttpService.client.getSite();
