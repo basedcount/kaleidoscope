@@ -1,7 +1,6 @@
-import type { Response } from "express";
 import { fediseerApi } from "./config";
-import { isBrowser } from "@utils/browser";
 import { HttpService } from "./services";
+import { ENV } from "./env";
 
 export interface EnvVarsType {
   DISCORD_URL?: string;
@@ -10,19 +9,6 @@ export interface EnvVarsType {
   ENABLE_USER_FLAIRS: boolean;
   ENABLE_FEDISEER: boolean;
 }
-
-// Server - Don't send any secrets from here, this gets sent to the client
-export default async ({ res }: { res: Response }) => {
-  const vars = {
-    DISCORD_URL: process.env.DISCORD_URL,
-    DONATION_URL: process.env.DONATION_URL,
-    GIT_REPOSITORY: process.env.GIT_REPOSITORY,
-    ENABLE_USER_FLAIRS: process.env.ENABLE_USER_FLAIRS === "true",
-    ENABLE_FEDISEER: process.env.ENABLE_FEDISEER !== "false",
-  } satisfies EnvVarsType;
-
-  res.type("json").send(JSON.stringify(vars));
-};
 
 // Client - fetch what gets exported by the server, only once at startup
 export class EnvVars {
@@ -44,18 +30,13 @@ export class EnvVars {
       if (this.#fetched || this.#loading) return; // We assume that the env vars won't change during runtime, we fetch them once and save them in the static propreties
       this.#loading = true; //Only allow one request at a time to be processed
 
-      const res = isBrowser()
-        ? await fetch("/env")
-        : await fetch(
-            `http://${process.env.LEMMY_UI_HOST ?? "0.0.0.0:1234"}/env`,
-          );
-      const env = await res.json();
+      const ENABLE_FEDISEER = ENV.ENABLE_FEDISEER === 'true';
 
-      EnvVars.DISCORD_URL = env.DISCORD_URL;
-      EnvVars.DONATION_URL = env.DONATION_URL;
-      EnvVars.GIT_REPOSITORY = env.GIT_REPOSITORY;
-      EnvVars.ENABLE_USER_FLAIRS = env.ENABLE_USER_FLAIRS;
-      EnvVars.ENABLE_FEDISEER = env.ENABLE_FEDISEER;
+      EnvVars.DISCORD_URL = ENV.DISCORD_URL.length > 0 ? ENV.DISCORD_URL : undefined;
+      EnvVars.DONATION_URL = ENV.DONATION_URL.length > 0 ? ENV.DONATION_URL : undefined;
+      EnvVars.GIT_REPOSITORY = ENV.GIT_REPOSITORY.length > 0 ? ENV.GIT_REPOSITORY : undefined;
+      EnvVars.ENABLE_USER_FLAIRS = ENV.ENABLE_USER_FLAIRS === 'true';
+      EnvVars.ENABLE_FEDISEER = ENABLE_FEDISEER;
 
       const domain = await (async () => {
         const site = await HttpService.client.getSite();
@@ -65,7 +46,7 @@ export class EnvVars {
         return new URL(site.data.site_view.site.actor_id).host;
       })();
 
-      EnvVars.FEDISEER = getFediseerData(env.ENABLE_FEDISEER, domain);
+      EnvVars.FEDISEER = getFediseerData(ENABLE_FEDISEER, domain);
 
       this.#fetched = true;
       this.#loading = false;
