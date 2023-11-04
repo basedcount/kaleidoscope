@@ -52,4 +52,4 @@ RUN chown -R node:node /app
 USER node
 EXPOSE 1234
 WORKDIR /app
-CMD /app/inject-env.sh && node dist/js/server.js
+CMD ./inject-env.sh && node dist/js/server.js
