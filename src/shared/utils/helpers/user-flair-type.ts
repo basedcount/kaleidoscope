@@ -173,7 +173,7 @@ export async function getCommunitiesWithFlairs() {
 }
 
 function getFlairsUrl() {
-  return `http://localhost:1236/flair`;
+  // return `http://localhost:1236/flair`;  //DEV
   if (isBrowser()) return ('/flair');
   return `http://${EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST ?? "localhost:1236"}/flair`;
 }
