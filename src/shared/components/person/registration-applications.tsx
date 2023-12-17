@@ -1,8 +1,4 @@
-import {
-  editRegistrationApplication,
-  myAuthRequired,
-  setIsoData,
-} from "@utils/app";
+import { editRegistrationApplication, setIsoData } from "@utils/app";
 import { randomStr } from "@utils/helpers";
 import { RouteDataResponse } from "@utils/types";
 import classNames from "classnames";
@@ -10,18 +6,27 @@ import { Component, linkEvent } from "inferno";
 import {
   ApproveRegistrationApplication,
   GetSiteResponse,
+  LemmyHttp,
   ListRegistrationApplicationsResponse,
   RegistrationApplicationView,
 } from "lemmy-js-client";
 import { fetchLimit } from "../../config";
 import { InitialFetchRequest } from "../../interfaces";
 import { FirstLoadService, I18NextService, UserService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+  wrapClient,
+} from "../../services/HttpService";
 import { setupTippy } from "../../tippy";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
 import { Paginator } from "../common/paginator";
 import { RegistrationApplication } from "../common/registration-application";
+import { UnreadCounterService } from "../../services";
+import { getHttpBaseInternal } from "../../utils/env";
 
 enum UnreadOrAll {
   Unread,
@@ -46,7 +51,7 @@ export class RegistrationApplications extends Component<
 > {
   private isoData = setIsoData<RegistrationApplicationsData>(this.context);
   state: RegistrationApplicationsState = {
-    appsRes: { state: "empty" },
+    appsRes: EMPTY_REQUEST,
     siteRes: this.isoData.site_res,
     unreadOrAll: UnreadOrAll.Unread,
     page: 1,
@@ -205,46 +210,49 @@ export class RegistrationApplications extends Component<
   }
 
   static async fetchInitialData({
-    auth,
-    client,
+    headers,
   }: InitialFetchRequest): Promise<RegistrationApplicationsData> {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     return {
-      listRegistrationApplicationsResponse: auth
+      listRegistrationApplicationsResponse: headers["Authorization"]
         ? await client.listRegistrationApplications({
             unread_only: true,
             page: 1,
             limit: fetchLimit,
-            auth: auth as string,
           })
-        : { state: "empty" },
+        : EMPTY_REQUEST,
     };
   }
 
   async refetch() {
     const unread_only = this.state.unreadOrAll === UnreadOrAll.Unread;
     this.setState({
-      appsRes: { state: "loading" },
+      appsRes: LOADING_REQUEST,
     });
     this.setState({
       appsRes: await HttpService.client.listRegistrationApplications({
         unread_only: unread_only,
         page: this.state.page,
         limit: fetchLimit,
-        auth: myAuthRequired(),
       }),
     });
   }
 
   async handleApproveApplication(form: ApproveRegistrationApplication) {
-    const approveRes = await HttpService.client.approveRegistrationApplication(
-      form,
-    );
+    const approveRes =
+      await HttpService.client.approveRegistrationApplication(form);
     this.setState(s => {
       if (s.appsRes.state === "success" && approveRes.state === "success") {
         s.appsRes.data.registration_applications = editRegistrationApplication(
           approveRes.data.registration_application,
           s.appsRes.data.registration_applications,
         );
+        if (this.state.unreadOrAll === UnreadOrAll.Unread) {
+          this.refetch();
+          UnreadCounterService.Instance.updateApplications();
+        }
       }
       return s;
     });

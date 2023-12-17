@@ -1,9 +1,4 @@
-import {
-  fetchThemeList,
-  myAuthRequired,
-  setIsoData,
-  showLocal,
-} from "@utils/app";
+import { fetchThemeList, setIsoData, showLocal } from "@utils/app";
 import { capitalizeFirstLetter } from "@utils/helpers";
 import { RouteDataResponse } from "@utils/types";
 import classNames from "classnames";
@@ -16,12 +11,19 @@ import {
   EditSite,
   GetFederatedInstancesResponse,
   GetSiteResponse,
+  LemmyHttp,
   PersonView,
 } from "lemmy-js-client";
 import { InitialFetchRequest } from "../../interfaces";
 import { removeFromEmojiDataModel, updateEmojiDataModel } from "../../markdown";
 import { FirstLoadService, I18NextService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+  wrapClient,
+} from "../../services/HttpService";
 import { toast } from "../../toast";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
@@ -31,6 +33,7 @@ import { EmojiForm } from "./emojis-form";
 import RateLimitForm from "./rate-limit-form";
 import { SiteForm } from "./site-form";
 import { TaglineForm } from "./tagline-form";
+import { getHttpBaseInternal } from "../../utils/env";
 
 type AdminSettingsData = RouteDataResponse<{
   bannedRes: BannedPersonsResponse;
@@ -55,9 +58,9 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
     siteRes: this.isoData.site_res,
     banned: [],
     currentTab: "site",
-    bannedRes: { state: "empty" },
-    instancesRes: { state: "empty" },
-    leaveAdminTeamRes: { state: "empty" },
+    bannedRes: EMPTY_REQUEST,
+    instancesRes: EMPTY_REQUEST,
+    leaveAdminTeamRes: EMPTY_REQUEST,
     loading: false,
     themeList: [],
     isIsomorphic: false,
@@ -85,16 +88,14 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
   }
 
   static async fetchInitialData({
-    auth,
-    client,
+    headers,
   }: InitialFetchRequest): Promise<AdminSettingsData> {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     return {
-      bannedRes: await client.getBannedPersons({
-        auth: auth as string,
-      }),
-      instancesRes: await client.getFederatedInstances({
-        auth: auth as string,
-      }),
+      bannedRes: await client.getBannedPersons(),
+      instancesRes: await client.getFederatedInstances(),
     };
   }
 
@@ -240,16 +241,14 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
 
   async fetchData() {
     this.setState({
-      bannedRes: { state: "loading" },
-      instancesRes: { state: "loading" },
+      bannedRes: LOADING_REQUEST,
+      instancesRes: LOADING_REQUEST,
       themeList: [],
     });
 
-    const auth = myAuthRequired();
-
     const [bannedRes, instancesRes, themeList] = await Promise.all([
-      HttpService.client.getBannedPersons({ auth }),
-      HttpService.client.getFederatedInstances({ auth }),
+      HttpService.client.getBannedPersons(),
+      HttpService.client.getFederatedInstances(),
       fetchThemeList(),
     ]);
 
@@ -344,11 +343,9 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
   }
 
   async handleLeaveAdminTeam(i: AdminSettings) {
-    i.setState({ leaveAdminTeamRes: { state: "loading" } });
+    i.setState({ leaveAdminTeamRes: LOADING_REQUEST });
     this.setState({
-      leaveAdminTeamRes: await HttpService.client.leaveAdmin({
-        auth: myAuthRequired(),
-      }),
+      leaveAdminTeamRes: await HttpService.client.leaveAdmin(),
     });
 
     if (this.state.leaveAdminTeamRes.state === "success") {
@@ -367,7 +364,7 @@ export class AdminSettings extends Component<any, AdminSettingsState> {
   async handleDeleteEmoji(form: DeleteCustomEmoji) {
     const res = await HttpService.client.deleteCustomEmoji(form);
     if (res.state === "success") {
-      removeFromEmojiDataModel(res.data.id);
+      removeFromEmojiDataModel(form.id);
     }
   }
 

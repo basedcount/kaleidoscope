@@ -1,4 +1,3 @@
-import { myAuthRequired } from "@utils/app";
 import { Component, InfernoNode, linkEvent } from "inferno";
 import {
   CreatePrivateMessage,
@@ -15,7 +14,7 @@ import { Icon, Spinner } from "../common/icon";
 import { MomentTime } from "../common/moment-time";
 import { PersonListing } from "../person/person-listing";
 import { PrivateMessageForm } from "./private-message-form";
-import ReportForm from "../common/report-form";
+import ModActionFormModal from "../common/mod-action-form-modal";
 
 interface PrivateMessageState {
   showReply: boolean;
@@ -54,6 +53,7 @@ export class PrivateMessage extends Component<
     super(props, context);
     this.handleReplyCancel = this.handleReplyCancel.bind(this);
     this.handleReportSubmit = this.handleReportSubmit.bind(this);
+    this.hideReportDialog = this.hideReportDialog.bind(this);
   }
 
   get mine(): boolean {
@@ -248,9 +248,12 @@ export class PrivateMessage extends Component<
             </div>
           )}
         </div>
-        {this.state.showReportDialog && (
-          <ReportForm onSubmit={this.handleReportSubmit} />
-        )}
+        <ModActionFormModal
+          onSubmit={this.handleReportSubmit}
+          modActionType="report-message"
+          onCancel={this.hideReportDialog}
+          show={this.state.showReportDialog}
+        />
         {this.state.showReply && (
           <div className="row">
             <div className="col-sm-6">
@@ -304,7 +307,6 @@ export class PrivateMessage extends Component<
     i.props.onDelete({
       private_message_id: i.props.private_message_view.private_message.id,
       deleted: !i.props.private_message_view.private_message.deleted,
-      auth: myAuthRequired(),
     });
   }
 
@@ -317,7 +319,6 @@ export class PrivateMessage extends Component<
     i.props.onMarkRead({
       private_message_id: i.props.private_message_view.private_message.id,
       read: !i.props.private_message_view.private_message.read,
-      auth: myAuthRequired(),
     });
   }
 
@@ -330,18 +331,21 @@ export class PrivateMessage extends Component<
   }
 
   handleShowReportDialog(i: PrivateMessage) {
-    i.setState({ showReportDialog: !i.state.showReportDialog });
+    i.setState({ showReportDialog: true });
   }
 
-  handleReportSubmit(reason: string) {
-    this.props.onReport({
-      private_message_id: this.props.private_message_view.private_message.id,
-      reason,
-      auth: myAuthRequired(),
-    });
-
+  hideReportDialog() {
     this.setState({
       showReportDialog: false,
     });
+  }
+
+  async handleReportSubmit(reason: string) {
+    this.props.onReport({
+      private_message_id: this.props.private_message_view.private_message.id,
+      reason,
+    });
+
+    this.hideReportDialog();
   }
 }

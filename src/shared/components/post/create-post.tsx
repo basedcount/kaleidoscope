@@ -1,4 +1,9 @@
-import { enableDownvotes, enableNsfw, myAuth, setIsoData } from "@utils/app";
+import {
+  communityToChoice,
+  enableDownvotes,
+  enableNsfw,
+  setIsoData,
+} from "@utils/app";
 import { getIdFromString, getQueryParams } from "@utils/helpers";
 import type { QueryParams } from "@utils/types";
 import { Choice, RouteDataResponse } from "@utils/types";
@@ -9,18 +14,22 @@ import {
   GetCommunity,
   GetCommunityResponse,
   GetSiteResponse,
+  LemmyHttp,
   ListCommunitiesResponse,
 } from "lemmy-js-client";
 import { InitialFetchRequest, PostFormParams } from "../../interfaces";
 import { FirstLoadService, I18NextService } from "../../services";
 import {
+  EMPTY_REQUEST,
   HttpService,
   RequestState,
   WrappedLemmyHttp,
+  wrapClient,
 } from "../../services/HttpService";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
 import { PostForm } from "./post-form";
+import { getHttpBaseInternal } from "../../utils/env";
 
 export interface CreatePostProps {
   communityId?: number;
@@ -57,7 +66,7 @@ export class CreatePost extends Component<
   state: CreatePostState = {
     siteRes: this.isoData.site_res,
     loading: true,
-    initialCommunitiesRes: { state: "empty" },
+    initialCommunitiesRes: EMPTY_REQUEST,
     isIsomorphic: false,
   };
 
@@ -81,10 +90,9 @@ export class CreatePost extends Component<
       };
 
       if (communityRes?.state === "success") {
-        const communityChoice: Choice = {
-          label: communityRes.data.community_view.community.title,
-          value: communityRes.data.community_view.community.id.toString(),
-        };
+        const communityChoice = communityToChoice(
+          communityRes.data.community_view,
+        );
 
         this.state = {
           ...this.state,
@@ -96,19 +104,14 @@ export class CreatePost extends Component<
 
   async fetchCommunity() {
     const { communityId } = getCreatePostQueryParams();
-    const auth = myAuth();
 
     if (communityId) {
       const res = await HttpService.client.getCommunity({
         id: communityId,
-        auth,
       });
       if (res.state === "success") {
         this.setState({
-          selectedCommunityChoice: {
-            label: res.data.community_view.community.title,
-            value: res.data.community_view.community.id.toString(),
-          },
+          selectedCommunityChoice: communityToChoice(res.data.community_view),
           loading: false,
         });
       }
@@ -237,20 +240,21 @@ export class CreatePost extends Component<
   }
 
   static async fetchInitialData({
-    client,
+    headers,
     query: { communityId },
-    auth,
   }: InitialFetchRequest<
     QueryParams<CreatePostProps>
   >): Promise<CreatePostData> {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     const data: CreatePostData = {
       initialCommunitiesRes: await fetchCommunitiesForOptions(client),
-      communityResponse: { state: "empty" },
+      communityResponse: EMPTY_REQUEST,
     };
 
     if (communityId) {
       const form: GetCommunity = {
-        auth,
         id: getIdFromString(communityId),
       };
 

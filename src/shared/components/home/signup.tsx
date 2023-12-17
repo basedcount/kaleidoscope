@@ -1,4 +1,4 @@
-import { myAuth, setIsoData } from "@utils/app";
+import { setIsoData } from "@utils/app";
 import { isBrowser } from "@utils/browser";
 import { validEmail } from "@utils/helpers";
 import { Component, linkEvent } from "inferno";
@@ -13,7 +13,12 @@ import {
 import { joinLemmyUrl } from "../../config";
 import { mdToHtml } from "../../markdown";
 import { I18NextService, UserService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+} from "../../services/HttpService";
 import { toast } from "../../toast";
 import { HtmlTags } from "../common/html-tags";
 import { Icon, Spinner } from "../common/icon";
@@ -43,8 +48,8 @@ export class Signup extends Component<any, State> {
   private audio?: HTMLAudioElement;
 
   state: State = {
-    registerRes: { state: "empty" },
-    captchaRes: { state: "empty" },
+    registerRes: EMPTY_REQUEST,
+    captchaRes: EMPTY_REQUEST,
     form: {
       show_nsfw: false,
     },
@@ -65,9 +70,9 @@ export class Signup extends Component<any, State> {
   }
 
   async fetchCaptcha() {
-    this.setState({ captchaRes: { state: "loading" } });
+    this.setState({ captchaRes: LOADING_REQUEST });
     this.setState({
-      captchaRes: await HttpService.client.getCaptcha({}),
+      captchaRes: await HttpService.client.getCaptcha(),
     });
 
     this.setState(s => {
@@ -368,7 +373,7 @@ export class Signup extends Component<any, State> {
       username,
     } = i.state.form;
     if (username && password && password_verify) {
-      i.setState({ registerRes: { state: "loading" } });
+      i.setState({ registerRes: LOADING_REQUEST });
 
       const registerRes = await HttpService.client.register({
         username,
@@ -383,8 +388,8 @@ export class Signup extends Component<any, State> {
       });
       switch (registerRes.state) {
         case "failed": {
-          toast(registerRes.msg, "danger");
-          i.setState({ registerRes: { state: "empty" } });
+          toast(registerRes.err.message, "danger");
+          i.setState({ registerRes: EMPTY_REQUEST });
           break;
         }
 
@@ -397,7 +402,7 @@ export class Signup extends Component<any, State> {
               res: data,
             });
 
-            const site = await HttpService.client.getSite({ auth: myAuth() });
+            const site = await HttpService.client.getSite();
 
             if (site.state === "success") {
               UserService.Instance.myUserInfo = site.data.my_user;

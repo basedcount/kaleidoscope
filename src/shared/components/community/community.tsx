@@ -8,18 +8,13 @@ import {
   enableNsfw,
   getCommentParentId,
   getDataTypeString,
-  myAuth,
   postToCommentSortType,
   setIsoData,
   showLocal,
   updateCommunityBlock,
   updatePersonBlock,
 } from "@utils/app";
-import {
-  getPageFromString,
-  getQueryParams,
-  getQueryString,
-} from "@utils/helpers";
+import { getQueryParams, getQueryString } from "@utils/helpers";
 import type { QueryParams } from "@utils/types";
 import { RouteDataResponse } from "@utils/types";
 import { Component, RefObject, createRef, linkEvent } from "inferno";
@@ -59,14 +54,14 @@ import {
   GetPosts,
   GetPostsResponse,
   GetSiteResponse,
+  LemmyHttp,
   LockPost,
   MarkCommentReplyAsRead,
   MarkPersonMentionAsRead,
-  MarkPostAsRead,
+  PaginationCursor,
   PostResponse,
   PurgeComment,
   PurgeCommunity,
-  PurgeItemResponse,
   PurgePerson,
   PurgePost,
   RemoveComment,
@@ -75,6 +70,7 @@ import {
   SaveComment,
   SavePost,
   SortType,
+  SuccessResponse,
   TransferCommunity,
 } from "lemmy-js-client";
 import { fetchLimit, relTags } from "../../config";
@@ -84,7 +80,13 @@ import {
   InitialFetchRequest,
 } from "../../interfaces";
 import { FirstLoadService, I18NextService, UserService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+  wrapClient,
+} from "../../services/HttpService";
 import { setupTippy } from "../../tippy";
 import { toast } from "../../toast";
 import { CommentNodes } from "../comment/comment-nodes";
@@ -92,7 +94,6 @@ import { BannerIconHeader } from "../common/banner-icon-header";
 import { DataTypeSelect } from "../common/data-type-select";
 import { HtmlTags } from "../common/html-tags";
 import { Icon, Spinner } from "../common/icon";
-import { Paginator } from "../common/paginator";
 import { SortSelect } from "../common/sort-select";
 import { Sidebar } from "../community/sidebar";
 import { SiteSidebar } from "../home/site-sidebar";
@@ -102,6 +103,8 @@ import { amAdmin } from "@utils/roles";
 import { EnvVars } from "../../get-env-vars";
 import { isBrowser } from "@utils/browser";
 import Fediseer from "../fediseer";
+import { PaginatorCursor } from "../common/paginator-cursor";
+import { getHttpBaseInternal } from "../../utils/env";
 
 type CommunityData = RouteDataResponse<{
   communityRes: GetCommunityResponse;
@@ -122,13 +125,13 @@ interface State {
 interface CommunityProps {
   dataType: DataType;
   sort: SortType;
-  page: number;
+  pageCursor?: PaginationCursor;
 }
 
 function getCommunityQueryParams() {
   return getQueryParams<CommunityProps>({
     dataType: getDataTypeFromQuery,
-    page: getPageFromString,
+    pageCursor: cursor => cursor,
     sort: getSortTypeFromQuery,
   });
 }
@@ -151,9 +154,9 @@ export class Community extends Component<
 > {
   private isoData = setIsoData<CommunityData>(this.context);
   state: State = {
-    communityRes: { state: "empty" },
-    postsRes: { state: "empty" },
-    commentsRes: { state: "empty" },
+    communityRes: EMPTY_REQUEST,
+    postsRes: EMPTY_REQUEST,
+    commentsRes: EMPTY_REQUEST,
     siteRes: this.isoData.site_res,
     showSidebarMobile: false,
     finished: new Map(),
@@ -165,7 +168,8 @@ export class Community extends Component<
 
     this.handleSortChange = this.handleSortChange.bind(this);
     this.handleDataTypeChange = this.handleDataTypeChange.bind(this);
-    this.handlePageChange = this.handlePageChange.bind(this);
+    this.handlePageNext = this.handlePageNext.bind(this);
+    this.handlePagePrev = this.handlePagePrev.bind(this);
 
     // All of the action binds
     this.handleDeleteCommunity = this.handleDeleteCommunity.bind(this);
@@ -200,7 +204,6 @@ export class Community extends Component<
     this.handleSavePost = this.handleSavePost.bind(this);
     this.handlePurgePost = this.handlePurgePost.bind(this);
     this.handleFeaturePost = this.handleFeaturePost.bind(this);
-    this.handleMarkPostAsRead = this.handleMarkPostAsRead.bind(this);
     this.mainContentRef = createRef();
     // Only fetch the data if coming from another route
     if (FirstLoadService.isFirstLoad) {
@@ -217,11 +220,10 @@ export class Community extends Component<
   }
 
   async fetchCommunity() {
-    this.setState({ communityRes: { state: "loading" } });
+    this.setState({ communityRes: LOADING_REQUEST });
     this.setState({
       communityRes: await HttpService.client.getCommunity({
         name: this.props.match.params.name,
-        auth: myAuth(),
       }),
     });
   }
@@ -237,63 +239,73 @@ export class Community extends Component<
   }
 
   static async fetchInitialData({
-    client,
+    headers,
     path,
-    query: { dataType: urlDataType, page: urlPage, sort: urlSort },
-    auth,
+    query: { dataType: urlDataType, pageCursor, sort: urlSort },
   }: InitialFetchRequest<QueryParams<CommunityProps>>): Promise<
     Promise<CommunityData>
   > {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     const pathSplit = path.split("/");
 
     const communityName = pathSplit[2];
     const communityForm: GetCommunity = {
       name: communityName,
-      auth,
     };
 
     const dataType = getDataTypeFromQuery(urlDataType);
 
     const sort = getSortTypeFromQuery(urlSort);
 
-    const page = getPageFromString(urlPage);
-
-    let postsResponse: RequestState<GetPostsResponse> = { state: "empty" };
-    let commentsResponse: RequestState<GetCommentsResponse> = {
-      state: "empty",
-    };
+    let postsFetch: Promise<RequestState<GetPostsResponse>> =
+      Promise.resolve(EMPTY_REQUEST);
+    let commentsFetch: Promise<RequestState<GetCommentsResponse>> =
+      Promise.resolve(EMPTY_REQUEST);
 
     if (dataType === DataType.Post) {
       const getPostsForm: GetPosts = {
         community_name: communityName,
-        page,
+        page_cursor: pageCursor,
         limit: fetchLimit,
         sort,
         type_: "All",
         saved_only: false,
-        auth,
       };
 
-      postsResponse = await client.getPosts(getPostsForm);
+      postsFetch = client.getPosts(getPostsForm);
     } else {
       const getCommentsForm: GetComments = {
         community_name: communityName,
-        page,
         limit: fetchLimit,
         sort: postToCommentSortType(sort),
         type_: "All",
         saved_only: false,
-        auth,
       };
 
-      commentsResponse = await client.getComments(getCommentsForm);
+      commentsFetch = client.getComments(getCommentsForm);
     }
 
+    const communityFetch = client.getCommunity(communityForm);
+
+    const [communityRes, commentsRes, postsRes] = await Promise.all([
+      communityFetch,
+      commentsFetch,
+      postsFetch,
+    ]);
+
     return {
-      communityRes: await client.getCommunity(communityForm),
-      commentsRes: commentsResponse,
-      postsRes: postsResponse,
+      communityRes,
+      commentsRes,
+      postsRes,
     };
+  }
+
+  get getNextPage(): PaginationCursor | undefined {
+    return this.state.postsRes.state === "success"
+      ? this.state.postsRes.data.next_page
+      : undefined;
   }
 
   get documentTitle(): string {
@@ -313,7 +325,6 @@ export class Community extends Component<
         );
       case "success": {
         const res = this.state.communityRes.data;
-        const { page } = getCommunityQueryParams();
 
         return (
           <>
@@ -350,13 +361,9 @@ export class Community extends Component<
                 </div>
                 {this.selects(res)}
                 {this.listings(res)}
-                <Paginator
-                  page={page}
-                  onChange={this.handlePageChange}
-                  nextDisabled={
-                    this.state.postsRes.state !== "success" ||
-                    fetchLimit > this.state.postsRes.data.posts.length
-                  }
+                <PaginatorCursor
+                  nextPage={this.getNextPage}
+                  onNext={this.handlePageNext}
                 />
               </main>
               <aside className="d-none d-md-block col-md-4 col-lg-3">
@@ -452,7 +459,7 @@ export class Community extends Component<
               onAddAdmin={this.handleAddAdmin}
               onTransferCommunity={this.handleTransferCommunity}
               onFeaturePost={this.handleFeaturePost}
-              onMarkPostAsRead={this.handleMarkPostAsRead}
+              onMarkPostAsRead={async () => {}}
             />
           );
       }
@@ -557,18 +564,22 @@ export class Community extends Component<
     );
   }
 
-  handlePageChange(page: number) {
-    this.updateUrl({ page });
+  handlePagePrev() {
+    this.props.history.back();
+  }
+
+  handlePageNext(nextPage: PaginationCursor) {
+    this.updateUrl({ pageCursor: nextPage });
     window.scrollTo(0, 0);
   }
 
   handleSortChange(sort: SortType) {
-    this.updateUrl({ sort, page: 1 });
+    this.updateUrl({ sort, pageCursor: undefined });
     window.scrollTo(0, 0);
   }
 
   handleDataTypeChange(dataType: DataType) {
-    this.updateUrl({ dataType, page: 1 });
+    this.updateUrl({ dataType, pageCursor: undefined });
     window.scrollTo(0, 0);
   }
 
@@ -578,16 +589,12 @@ export class Community extends Component<
     }));
   }
 
-  async updateUrl({ dataType, page, sort }: Partial<CommunityProps>) {
-    const {
-      dataType: urlDataType,
-      page: urlPage,
-      sort: urlSort,
-    } = getCommunityQueryParams();
+  async updateUrl({ dataType, pageCursor, sort }: Partial<CommunityProps>) {
+    const { dataType: urlDataType, sort: urlSort } = getCommunityQueryParams();
 
     const queryParams: QueryParams<CommunityProps> = {
       dataType: getDataTypeString(dataType ?? urlDataType),
-      page: (page ?? urlPage).toString(),
+      pageCursor: pageCursor,
       sort: sort ?? urlSort,
     };
 
@@ -599,33 +606,30 @@ export class Community extends Component<
   }
 
   async fetchData() {
-    const { dataType, page, sort } = getCommunityQueryParams();
+    const { dataType, pageCursor, sort } = getCommunityQueryParams();
     const { name } = this.props.match.params;
 
     if (dataType === DataType.Post) {
-      this.setState({ postsRes: { state: "loading" } });
+      this.setState({ postsRes: LOADING_REQUEST });
       this.setState({
         postsRes: await HttpService.client.getPosts({
-          page,
+          page_cursor: pageCursor,
           limit: fetchLimit,
           sort,
           type_: "All",
           community_name: name,
           saved_only: false,
-          auth: myAuth(),
         }),
       });
     } else {
-      this.setState({ commentsRes: { state: "loading" } });
+      this.setState({ commentsRes: LOADING_REQUEST });
       this.setState({
         commentsRes: await HttpService.client.getComments({
-          page,
           limit: fetchLimit,
           sort: postToCommentSortType(sort),
           type_: "All",
           community_name: name,
           saved_only: false,
-          auth: myAuth(),
         }),
       });
     }
@@ -718,7 +722,7 @@ export class Community extends Component<
 
   async handleEditComment(form: EditComment) {
     const editCommentRes = await HttpService.client.editComment(form);
-    this.findAndUpdateComment(editCommentRes);
+    this.findAndUpdateCommentEdit(editCommentRes);
 
     return editCommentRes;
   }
@@ -766,11 +770,13 @@ export class Community extends Component<
   async handlePostEdit(form: EditPost) {
     const res = await HttpService.client.editPost(form);
     this.findAndUpdatePost(res);
+    return res;
   }
 
   async handlePostVote(form: CreatePostLike) {
     const voteRes = await HttpService.client.likePost(form);
     this.findAndUpdatePost(voteRes);
+    return voteRes;
   }
 
   async handleCommentReport(form: CreateCommentReport) {
@@ -806,9 +812,8 @@ export class Community extends Component<
   }
 
   async handleTransferCommunity(form: TransferCommunity) {
-    const transferCommunityRes = await HttpService.client.transferCommunity(
-      form,
-    );
+    const transferCommunityRes =
+      await HttpService.client.transferCommunity(form);
     toast(I18NextService.i18n.t("transfer_community"));
     this.updateCommunityFull(transferCommunityRes);
   }
@@ -821,11 +826,6 @@ export class Community extends Component<
   async handlePersonMentionRead(form: MarkPersonMentionAsRead) {
     // TODO not sure what to do here. Maybe it is actually optional, because post doesn't need it.
     await HttpService.client.markPersonMentionAsRead(form);
-  }
-
-  async handleMarkPostAsRead(form: MarkPostAsRead) {
-    const res = await HttpService.client.markPostAsRead(form);
-    this.findAndUpdatePost(res);
   }
 
   async handleBanFromCommunity(form: BanFromCommunity) {
@@ -901,11 +901,24 @@ export class Community extends Component<
     });
   }
 
-  purgeItem(purgeRes: RequestState<PurgeItemResponse>) {
+  purgeItem(purgeRes: RequestState<SuccessResponse>) {
     if (purgeRes.state === "success") {
       toast(I18NextService.i18n.t("purge_success"));
       this.context.router.history.push(`/`);
     }
+  }
+
+  findAndUpdateCommentEdit(res: RequestState<CommentResponse>) {
+    this.setState(s => {
+      if (s.commentsRes.state === "success" && res.state === "success") {
+        s.commentsRes.data.comments = editComment(
+          res.data.comment_view,
+          s.commentsRes.data.comments,
+        );
+        s.finished.set(res.data.comment_view.comment.id, true);
+      }
+      return s;
+    });
   }
 
   findAndUpdateComment(res: RequestState<CommentResponse>) {
@@ -915,7 +928,6 @@ export class Community extends Component<
           res.data.comment_view,
           s.commentsRes.data.comments,
         );
-        s.finished.set(res.data.comment_view.comment.id, true);
       }
       return s;
     });

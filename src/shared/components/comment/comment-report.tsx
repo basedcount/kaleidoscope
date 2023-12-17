@@ -1,4 +1,3 @@
-import { myAuthRequired } from "@utils/app";
 import { Component, InfernoNode, linkEvent } from "inferno";
 import { T } from "inferno-i18next-dess";
 import {
@@ -11,6 +10,7 @@ import { I18NextService } from "../../services";
 import { Icon, Spinner } from "../common/icon";
 import { PersonListing } from "../person/person-listing";
 import { CommentNode } from "./comment-node";
+import { EMPTY_REQUEST } from "../../services/HttpService";
 
 interface CommentReportProps {
   report: CommentReportView;
@@ -56,6 +56,8 @@ export class CommentReport extends Component<
       post: r.post,
       community: r.community,
       creator_banned_from_community: r.creator_banned_from_community,
+      creator_is_moderator: false,
+      creator_is_admin: false,
       counts: r.counts,
       subscribed: "NotSubscribed",
       saved: false,
@@ -82,24 +84,25 @@ export class CommentReport extends Component<
           hideImages
           // All of these are unused, since its viewonly
           finished={new Map()}
-          onSaveComment={() => {}}
-          onBlockPerson={() => {}}
-          onDeleteComment={() => {}}
-          onRemoveComment={() => {}}
-          onCommentVote={() => {}}
-          onCommentReport={() => {}}
-          onDistinguishComment={() => {}}
-          onAddModToCommunity={() => {}}
-          onAddAdmin={() => {}}
-          onTransferCommunity={() => {}}
-          onPurgeComment={() => {}}
-          onPurgePerson={() => {}}
+          onSaveComment={async () => {}}
+          onBlockPerson={async () => {}}
+          onDeleteComment={async () => {}}
+          onRemoveComment={async () => {}}
+          onCommentVote={async () => {}}
+          onCommentReport={async () => {}}
+          onDistinguishComment={async () => {}}
+          onAddModToCommunity={async () => {}}
+          onAddAdmin={async () => {}}
+          onTransferCommunity={async () => {}}
+          onPurgeComment={async () => {}}
+          onPurgePerson={async () => {}}
           onCommentReplyRead={() => {}}
           onPersonMentionRead={() => {}}
-          onBanPersonFromCommunity={() => {}}
-          onBanPerson={() => {}}
-          onCreateComment={() => Promise.resolve({ state: "empty" })}
-          onEditComment={() => Promise.resolve({ state: "empty" })}
+          onBanPersonFromCommunity={async () => {}}
+          onBanPerson={async () => {}}
+          onCreateComment={async () => Promise.resolve(EMPTY_REQUEST)}
+          onEditComment={() => Promise.resolve(EMPTY_REQUEST)}
+          fediseerFilter="disabled" //This is set as disabled because reports should always be visible
         />
         <div>
           {I18NextService.i18n.t("reporter")}:{" "}
@@ -149,7 +152,6 @@ export class CommentReport extends Component<
     i.props.onResolveReport({
       report_id: i.props.report.comment_report.id,
       resolved: !i.props.report.comment_report.resolved,
-      auth: myAuthRequired(),
     });
   }
 }

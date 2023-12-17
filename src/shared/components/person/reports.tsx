@@ -2,7 +2,6 @@ import {
   editCommentReport,
   editPostReport,
   editPrivateMessageReport,
-  myAuthRequired,
   setIsoData,
 } from "@utils/app";
 import { randomStr } from "@utils/helpers";
@@ -14,6 +13,7 @@ import {
   CommentReportResponse,
   CommentReportView,
   GetSiteResponse,
+  LemmyHttp,
   ListCommentReports,
   ListCommentReportsResponse,
   ListPostReports,
@@ -36,13 +36,20 @@ import {
   I18NextService,
   UserService,
 } from "../../services";
-import { RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  LOADING_REQUEST,
+  RequestState,
+  wrapClient,
+} from "../../services/HttpService";
 import { CommentReport } from "../comment/comment-report";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
 import { Paginator } from "../common/paginator";
 import { PostReport } from "../post/post-report";
 import { PrivateMessageReport } from "../private_message/private-message-report";
+import { UnreadCounterService } from "../../services";
+import { getHttpBaseInternal } from "../../utils/env";
 
 enum UnreadOrAll {
   Unread,
@@ -89,9 +96,9 @@ interface ReportsState {
 export class Reports extends Component<any, ReportsState> {
   private isoData = setIsoData<ReportsData>(this.context);
   state: ReportsState = {
-    commentReportsRes: { state: "empty" },
-    postReportsRes: { state: "empty" },
-    messageReportsRes: { state: "empty" },
+    commentReportsRes: EMPTY_REQUEST,
+    postReportsRes: EMPTY_REQUEST,
+    messageReportsRes: EMPTY_REQUEST,
     unreadOrAll: UnreadOrAll.Unread,
     messageType: MessageType.All,
     page: 1,
@@ -531,9 +538,11 @@ export class Reports extends Component<any, ReportsState> {
   }
 
   static async fetchInitialData({
-    auth,
-    client,
+    headers,
   }: InitialFetchRequest): Promise<ReportsData> {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     const unresolved_only = true;
     const page = 1;
     const limit = fetchLimit;
@@ -542,20 +551,18 @@ export class Reports extends Component<any, ReportsState> {
       unresolved_only,
       page,
       limit,
-      auth: auth as string,
     };
 
     const postReportsForm: ListPostReports = {
       unresolved_only,
       page,
       limit,
-      auth: auth as string,
     };
 
     const data: ReportsData = {
       commentReportsRes: await client.listCommentReports(commentReportsForm),
       postReportsRes: await client.listPostReports(postReportsForm),
-      messageReportsRes: { state: "empty" },
+      messageReportsRes: EMPTY_REQUEST,
     };
 
     if (amAdmin()) {
@@ -563,7 +570,6 @@ export class Reports extends Component<any, ReportsState> {
         unresolved_only,
         page,
         limit,
-        auth: auth as string,
       };
 
       data.messageReportsRes = await client.listPrivateMessageReports(
@@ -578,12 +584,11 @@ export class Reports extends Component<any, ReportsState> {
     const unresolved_only = this.state.unreadOrAll === UnreadOrAll.Unread;
     const page = this.state.page;
     const limit = fetchLimit;
-    const auth = myAuthRequired();
 
     this.setState({
-      commentReportsRes: { state: "loading" },
-      postReportsRes: { state: "loading" },
-      messageReportsRes: { state: "loading" },
+      commentReportsRes: LOADING_REQUEST,
+      postReportsRes: LOADING_REQUEST,
+      messageReportsRes: LOADING_REQUEST,
     });
 
     const form:
@@ -593,7 +598,6 @@ export class Reports extends Component<any, ReportsState> {
       unresolved_only,
       page,
       limit,
-      auth,
     };
 
     this.setState({
@@ -603,9 +607,8 @@ export class Reports extends Component<any, ReportsState> {
 
     if (amAdmin()) {
       this.setState({
-        messageReportsRes: await HttpService.client.listPrivateMessageReports(
-          form,
-        ),
+        messageReportsRes:
+          await HttpService.client.listPrivateMessageReports(form),
       });
     }
   }
@@ -613,16 +616,28 @@ export class Reports extends Component<any, ReportsState> {
   async handleResolveCommentReport(form: ResolveCommentReport) {
     const res = await HttpService.client.resolveCommentReport(form);
     this.findAndUpdateCommentReport(res);
+    if (this.state.unreadOrAll === UnreadOrAll.Unread) {
+      this.refetch();
+      UnreadCounterService.Instance.updateReports();
+    }
   }
 
   async handleResolvePostReport(form: ResolvePostReport) {
     const res = await HttpService.client.resolvePostReport(form);
     this.findAndUpdatePostReport(res);
+    if (this.state.unreadOrAll === UnreadOrAll.Unread) {
+      this.refetch();
+      UnreadCounterService.Instance.updateReports();
+    }
   }
 
   async handleResolvePrivateMessageReport(form: ResolvePrivateMessageReport) {
     const res = await HttpService.client.resolvePrivateMessageReport(form);
     this.findAndUpdatePrivateMessageReport(res);
+    if (this.state.unreadOrAll === UnreadOrAll.Unread) {
+      this.refetch();
+      UnreadCounterService.Instance.updateReports();
+    }
   }
 
   findAndUpdateCommentReport(res: RequestState<CommentReportResponse>) {

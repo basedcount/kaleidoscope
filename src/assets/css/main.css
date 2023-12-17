@@ -100,7 +100,6 @@
 }
 
 .icon {
-  display: inline-grid;
   display: inline-flex;
   width: 1em;
   height: 1em;
@@ -457,6 +456,10 @@ br.big {
 
 .skip-link:focus {
   top: 0;
+}
+
+.totp-link {
+  width: fit-content;
 }
 
 dialog::backdrop {

@@ -1,15 +1,20 @@
-import { myAuth, setIsoData } from "@utils/app";
+import { setIsoData } from "@utils/app";
 import { capitalizeFirstLetter } from "@utils/helpers";
 import { Component, linkEvent } from "inferno";
-import { GetSiteResponse, LoginResponse } from "lemmy-js-client";
+import { GetSiteResponse, SuccessResponse } from "lemmy-js-client";
 import { HttpService, I18NextService, UserService } from "../../services";
-import { RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  LOADING_REQUEST,
+  RequestState,
+} from "../../services/HttpService";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
 import PasswordInput from "../common/password-input";
+import { toast } from "../../toast";
 
 interface State {
-  passwordChangeRes: RequestState<LoginResponse>;
+  passwordChangeRes: RequestState<SuccessResponse>;
   form: {
     token: string;
     password?: string;
@@ -22,7 +27,7 @@ export class PasswordChange extends Component<any, State> {
   private isoData = setIsoData(this.context);
 
   state: State = {
-    passwordChangeRes: { state: "empty" },
+    passwordChangeRes: EMPTY_REQUEST,
     siteRes: this.isoData.site_res,
     form: {
       token: this.props.match.params.token,
@@ -106,7 +111,7 @@ export class PasswordChange extends Component<any, State> {
 
   async handlePasswordChangeSubmit(i: PasswordChange, event: any) {
     event.preventDefault();
-    i.setState({ passwordChangeRes: { state: "loading" } });
+    i.setState({ passwordChangeRes: LOADING_REQUEST });
 
     const password = i.state.form.password;
     const password_verify = i.state.form.password_verify;
@@ -121,12 +126,9 @@ export class PasswordChange extends Component<any, State> {
       });
 
       if (i.state.passwordChangeRes.state === "success") {
-        const data = i.state.passwordChangeRes.data;
-        UserService.Instance.login({
-          res: data,
-        });
+        toast(I18NextService.i18n.t("password_changed"));
 
-        const site = await HttpService.client.getSite({ auth: myAuth() });
+        const site = await HttpService.client.getSite();
         if (site.state === "success") {
           UserService.Instance.myUserInfo = site.data.my_user;
         }

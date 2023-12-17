@@ -1,4 +1,4 @@
-import { getRecipientIdFromProps, myAuth, setIsoData } from "@utils/app";
+import { getRecipientIdFromProps, setIsoData } from "@utils/app";
 import { RouteDataResponse } from "@utils/types";
 import { Component } from "inferno";
 import {
@@ -6,14 +6,22 @@ import {
   GetPersonDetails,
   GetPersonDetailsResponse,
   GetSiteResponse,
+  LemmyHttp,
 } from "lemmy-js-client";
 import { InitialFetchRequest } from "../../interfaces";
 import { FirstLoadService, I18NextService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+  wrapClient,
+} from "../../services/HttpService";
 import { toast } from "../../toast";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
 import { PrivateMessageForm } from "./private-message-form";
+import { getHttpBaseInternal } from "../../utils/env";
 
 type CreatePrivateMessageData = RouteDataResponse<{
   recipientDetailsResponse: GetPersonDetailsResponse;
@@ -33,7 +41,7 @@ export class CreatePrivateMessage extends Component<
   private isoData = setIsoData<CreatePrivateMessageData>(this.context);
   state: CreatePrivateMessageState = {
     siteRes: this.isoData.site_res,
-    recipientRes: { state: "empty" },
+    recipientRes: EMPTY_REQUEST,
     recipientId: getRecipientIdFromProps(this.props),
     isIsomorphic: false,
   };
@@ -60,17 +68,18 @@ export class CreatePrivateMessage extends Component<
   }
 
   static async fetchInitialData({
-    client,
+    headers,
     path,
-    auth,
   }: InitialFetchRequest): Promise<CreatePrivateMessageData> {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     const person_id = Number(path.split("/").pop());
 
     const form: GetPersonDetails = {
       person_id,
       sort: "New",
       saved_only: false,
-      auth,
     };
 
     return {
@@ -80,7 +89,7 @@ export class CreatePrivateMessage extends Component<
 
   async fetchPersonDetails() {
     this.setState({
-      recipientRes: { state: "loading" },
+      recipientRes: LOADING_REQUEST,
     });
 
     this.setState({
@@ -88,7 +97,6 @@ export class CreatePrivateMessage extends Component<
         person_id: this.state.recipientId,
         sort: "New",
         saved_only: false,
-        auth: myAuth(),
       }),
     });
   }

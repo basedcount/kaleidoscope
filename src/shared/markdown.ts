@@ -8,11 +8,13 @@ import { CustomEmojiView } from "lemmy-js-client";
 import { default as MarkdownIt } from "markdown-it";
 import markdown_it_container from "markdown-it-container";
 // import markdown_it_emoji from "markdown-it-emoji/bare";
+import markdown_it_bidi from "markdown-it-bidi";
 import markdown_it_footnote from "markdown-it-footnote";
 import markdown_it_html5_embed from "markdown-it-html5-embed";
 import markdown_it_ruby from "markdown-it-ruby";
 import markdown_it_sub from "markdown-it-sub";
 import markdown_it_sup from "markdown-it-sup";
+import markdown_it_highlightjs from "markdown-it-highlightjs";
 import Renderer from "markdown-it/lib/renderer";
 import Token from "markdown-it/lib/token";
 import { instanceLinkRegex, relTags } from "./config";
@@ -60,11 +62,11 @@ const spoilerConfig = {
   },
 
   render: (tokens: any, idx: any) => {
-    var m = tokens[idx].info.trim().match(/^spoiler\s+(.*)$/);
-
+    const m = tokens[idx].info.trim().match(/^spoiler\s+(.*)$/);
     if (tokens[idx].nesting === 1) {
       // opening tag
-      return `<details><summary> ${md.utils.escapeHtml(m[1])} </summary>\n`;
+      const summary = mdToHtmlInline(md.utils.escapeHtml(m[1])).__html;
+      return `<details><summary> ${summary} </summary>\n`;
     } else {
       // closing tag
       return "</details>\n";
@@ -110,7 +112,7 @@ function localInstanceLinkParser(md: MarkdownIt) {
               newTokens.push(textToken);
             }
 
-            let href;
+            let href: string;
             if (match[0].startsWith("!")) {
               href = "/c/" + match[0].substring(1);
             } else if (match[0].startsWith("/m/")) {
@@ -168,8 +170,10 @@ export function setupMarkdown() {
     .use(markdown_it_footnote)
     .use(markdown_it_html5_embed, html5EmbedConfig)
     .use(markdown_it_container, "spoiler", spoilerConfig)
+    .use(markdown_it_highlightjs, { inline: true })
     .use(markdown_it_ruby)
-    .use(localInstanceLinkParser);
+    .use(localInstanceLinkParser)
+    .use(markdown_it_bidi);
   // .use(markdown_it_emoji, {
   //   defs: emojiDefs,
   // });
@@ -180,7 +184,9 @@ export function setupMarkdown() {
     .use(markdown_it_footnote)
     .use(markdown_it_html5_embed, html5EmbedConfig)
     .use(markdown_it_container, "spoiler", spoilerConfig)
+    .use(markdown_it_highlightjs, { inline: true })
     .use(localInstanceLinkParser)
+    .use(markdown_it_bidi)
     // .use(markdown_it_emoji, {
     //   defs: emojiDefs,
     // })

@@ -1,14 +1,19 @@
 import { setIsoData } from "@utils/app";
 import { Component } from "inferno";
-import { GetSiteResponse, VerifyEmailResponse } from "lemmy-js-client";
+import { GetSiteResponse, SuccessResponse } from "lemmy-js-client";
 import { I18NextService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+} from "../../services/HttpService";
 import { toast } from "../../toast";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
 
 interface State {
-  verifyRes: RequestState<VerifyEmailResponse>;
+  verifyRes: RequestState<SuccessResponse>;
   siteRes: GetSiteResponse;
 }
 
@@ -16,7 +21,7 @@ export class VerifyEmail extends Component<any, State> {
   private isoData = setIsoData(this.context);
 
   state: State = {
-    verifyRes: { state: "empty" },
+    verifyRes: EMPTY_REQUEST,
     siteRes: this.isoData.site_res,
   };
 
@@ -26,7 +31,7 @@ export class VerifyEmail extends Component<any, State> {
 
   async verify() {
     this.setState({
-      verifyRes: { state: "loading" },
+      verifyRes: LOADING_REQUEST,
     });
 
     this.setState({

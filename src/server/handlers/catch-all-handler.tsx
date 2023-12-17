@@ -1,12 +1,10 @@
 import { initializeSite, isAuthPath } from "@utils/app";
 import { getHttpBaseInternal } from "@utils/env";
 import { ErrorPageData } from "@utils/types";
-import * as cookie from "cookie";
-import fetch from "cross-fetch";
 import type { Request, Response } from "express";
 import { StaticRouter, matchPath } from "inferno-router";
 import { renderToString } from "inferno-server";
-import { GetSite, GetSiteResponse, LemmyHttp } from "lemmy-js-client";
+import { GetSiteResponse, LemmyHttp } from "lemmy-js-client";
 import { App } from "../../shared/components/app/app";
 import {
   InitialFetchRequest,
@@ -21,21 +19,17 @@ import {
 import { createSsrHtml } from "../utils/create-ssr-html";
 import { getErrorPageData } from "../utils/get-error-page-data";
 import { setForwardedHeaders } from "../utils/set-forwarded-headers";
+import { getJwtCookie } from "../utils/has-jwt-cookie";
 
 export default async (req: Request, res: Response) => {
   try {
     const activeRoute = routes.find(route => matchPath(req.path, route));
 
-    let auth = req.headers.cookie
-      ? cookie.parse(req.headers.cookie).jwt
-      : undefined;
-
-    const getSiteForm: GetSite = { auth };
-
     const headers = setForwardedHeaders(req.headers);
+    const auth = getJwtCookie(req.headers);
 
     const client = wrapClient(
-      new LemmyHttp(getHttpBaseInternal(), { fetchFunction: fetch, headers }),
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
     );
 
     const { path, url, query } = req;
@@ -46,19 +40,21 @@ export default async (req: Request, res: Response) => {
     let site: GetSiteResponse | undefined = undefined;
     let routeData: RouteData = {};
     let errorPageData: ErrorPageData | undefined = undefined;
-    let try_site = await client.getSite(getSiteForm);
+    let try_site = await client.getSite();
 
-    if (try_site.state === "failed" && try_site.msg === "not_logged_in") {
+    if (
+      try_site.state === "failed" &&
+      try_site.err.message === "not_logged_in"
+    ) {
       console.error(
         "Incorrect JWT token, skipping auth so frontend can remove jwt cookie",
       );
-      getSiteForm.auth = undefined;
-      auth = undefined;
-      try_site = await client.getSite(getSiteForm);
+      client.setHeaders({});
+      try_site = await client.getSite();
     }
 
     if (!auth && isAuthPath(path)) {
-      return res.redirect("/login");
+      return res.redirect(`/login?prev=${encodeURIComponent(url)}`);
     }
 
     if (try_site.state === "success") {
@@ -71,11 +67,10 @@ export default async (req: Request, res: Response) => {
 
       if (site && activeRoute?.fetchInitialData) {
         const initialFetchReq: InitialFetchRequest = {
-          client,
-          auth,
           path,
           query,
           site,
+          headers,
         };
 
         routeData = await activeRoute.fetchInitialData(initialFetchReq);
@@ -86,22 +81,23 @@ export default async (req: Request, res: Response) => {
       }
     } else if (try_site.state === "failed") {
       res.status(500);
-      errorPageData = getErrorPageData(new Error(try_site.msg), site);
+      errorPageData = getErrorPageData(new Error(try_site.err.message), site);
     }
 
     const error = Object.values(routeData).find(
-      res => res.state === "failed" && res.msg !== "couldnt_find_object", // TODO: find a better way of handling errors
+      res =>
+        res.state === "failed" && res.err.message !== "couldnt_find_object", // TODO: find a better way of handling errors
     ) as FailedRequestState | undefined;
 
     // Redirect to the 404 if there's an API error
     if (error) {
-      console.error(error.msg);
+      console.error(error.err);
 
-      if (error.msg === "instance_is_private") {
+      if (error.err.message === "instance_is_private") {
         return res.redirect(`/signup`);
       } else {
         res.status(500);
-        errorPageData = getErrorPageData(new Error(error.msg), site);
+        errorPageData = getErrorPageData(new Error(error.err.message), site);
       }
     }
 
@@ -114,7 +110,7 @@ export default async (req: Request, res: Response) => {
 
     const wrapper = (
       <StaticRouter location={url} context={isoData}>
-        <App user={site?.my_user} />
+        <App />
       </StaticRouter>
     );
 

@@ -3,17 +3,21 @@ import { LemmyHttp } from "lemmy-js-client";
 import { toast } from "../toast";
 import { I18NextService } from "./I18NextService";
 
-export type EmptyRequestState = {
-  state: "empty";
-};
+export const EMPTY_REQUEST = {
+  state: "empty",
+} as const;
 
-type LoadingRequestState = {
-  state: "loading";
-};
+export type EmptyRequestState = typeof EMPTY_REQUEST;
+
+export const LOADING_REQUEST = {
+  state: "loading",
+} as const;
+
+type LoadingRequestState = typeof LOADING_REQUEST;
 
 export type FailedRequestState = {
   state: "failed";
-  msg: string;
+  err: Error;
 };
 
 type SuccessRequestState<T> = {
@@ -32,7 +36,7 @@ export type RequestState<T> =
   | FailedRequestState
   | SuccessRequestState<T>;
 
-export type WrappedLemmyHttp = {
+export type WrappedLemmyHttp = WrappedLemmyHttpClient & {
   [K in keyof LemmyHttp]: LemmyHttp[K] extends (...args: any[]) => any
     ? ReturnType<LemmyHttp[K]> extends Promise<infer U>
       ? (...args: Parameters<LemmyHttp[K]>) => Promise<RequestState<U>>
@@ -43,18 +47,18 @@ export type WrappedLemmyHttp = {
 };
 
 class WrappedLemmyHttpClient {
-  #client: LemmyHttp;
+  rawClient: LemmyHttp;
 
   constructor(client: LemmyHttp, silent = false) {
-    this.#client = client;
+    this.rawClient = client;
 
     for (const key of Object.getOwnPropertyNames(
-      Object.getPrototypeOf(this.#client),
+      Object.getPrototypeOf(this.rawClient),
     )) {
       if (key !== "constructor") {
-        WrappedLemmyHttpClient.prototype[key] = async (...args) => {
+        this[key] = async (...args) => {
           try {
-            const res = await this.#client[key](...args);
+            const res = await this.rawClient[key](...args);
 
             return {
               data: res,
@@ -67,7 +71,7 @@ class WrappedLemmyHttpClient {
             }
             return {
               state: "failed",
-              msg: error,
+              err: error,
             };
           }
         };

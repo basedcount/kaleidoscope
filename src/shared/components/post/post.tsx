@@ -9,7 +9,6 @@ import {
   getCommentParentId,
   getDepthFromComment,
   getIdFromProps,
-  myAuth,
   setIsoData,
   updateCommunityBlock,
   updatePersonBlock,
@@ -19,7 +18,7 @@ import {
   restoreScrollPosition,
   saveScrollPosition,
 } from "@utils/browser";
-import { debounce, randomStr } from "@utils/helpers";
+import { debounce, getApubName, randomStr } from "@utils/helpers";
 import { isImage } from "@utils/media";
 import { RouteDataResponse } from "@utils/types";
 import autosize from "autosize";
@@ -60,14 +59,12 @@ import {
   GetPost,
   GetPostResponse,
   GetSiteResponse,
+  LemmyHttp,
   LockPost,
   MarkCommentReplyAsRead,
-  MarkPersonMentionAsRead,
-  MarkPostAsRead,
   PostResponse,
   PurgeComment,
   PurgeCommunity,
-  PurgeItemResponse,
   PurgePerson,
   PurgePost,
   RemoveComment,
@@ -75,6 +72,7 @@ import {
   RemovePost,
   SaveComment,
   SavePost,
+  SuccessResponse,
   TransferCommunity,
 } from "lemmy-js-client";
 import { commentTreeMaxDepth } from "../../config";
@@ -84,7 +82,13 @@ import {
   InitialFetchRequest,
 } from "../../interfaces";
 import { FirstLoadService, I18NextService, UserService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+  wrapClient,
+} from "../../services/HttpService";
 import { setupTippy } from "../../tippy";
 import { toast } from "../../toast";
 import { CommentForm } from "../comment/comment-form";
@@ -93,6 +97,7 @@ import { HtmlTags } from "../common/html-tags";
 import { Icon, Spinner } from "../common/icon";
 import { Sidebar } from "../community/sidebar";
 import { PostListing } from "./post-listing";
+import { getHttpBaseInternal } from "../../utils/env";
 
 const commentsShownInterval = 15;
 
@@ -121,8 +126,8 @@ export class Post extends Component<any, PostState> {
   private isoData = setIsoData<PostData>(this.context);
   private commentScrollDebounced: () => void;
   state: PostState = {
-    postRes: { state: "empty" },
-    commentsRes: { state: "empty" },
+    postRes: EMPTY_REQUEST,
+    commentsRes: EMPTY_REQUEST,
     postId: getIdFromProps(this.props),
     commentId: getCommentIdFromProps(this.props),
     commentSort: "Hot",
@@ -160,7 +165,6 @@ export class Post extends Component<any, PostState> {
     this.handleTransferCommunity = this.handleTransferCommunity.bind(this);
     this.handleFetchChildren = this.handleFetchChildren.bind(this);
     this.handleCommentReplyRead = this.handleCommentReplyRead.bind(this);
-    this.handlePersonMentionRead = this.handlePersonMentionRead.bind(this);
     this.handleBanFromCommunity = this.handleBanFromCommunity.bind(this);
     this.handleBanPerson = this.handleBanPerson.bind(this);
     this.handlePostEdit = this.handlePostEdit.bind(this);
@@ -172,7 +176,6 @@ export class Post extends Component<any, PostState> {
     this.handleSavePost = this.handleSavePost.bind(this);
     this.handlePurgePost = this.handlePurgePost.bind(this);
     this.handleFeaturePost = this.handleFeaturePost.bind(this);
-    this.handleMarkPostAsRead = this.handleMarkPostAsRead.bind(this);
 
     this.state = { ...this.state, commentSectionRef: createRef() };
 
@@ -197,27 +200,28 @@ export class Post extends Component<any, PostState> {
 
   async fetchPost() {
     this.setState({
-      postRes: { state: "loading" },
-      commentsRes: { state: "loading" },
+      postRes: LOADING_REQUEST,
+      commentsRes: LOADING_REQUEST,
     });
 
-    const auth = myAuth();
-
-    this.setState({
-      postRes: await HttpService.client.getPost({
+    const [postRes, commentsRes] = await Promise.all([
+      await HttpService.client.getPost({
         id: this.state.postId,
         comment_id: this.state.commentId,
-        auth,
       }),
-      commentsRes: await HttpService.client.getComments({
+      HttpService.client.getComments({
         post_id: this.state.postId,
         parent_id: this.state.commentId,
         max_depth: commentTreeMaxDepth,
         sort: this.state.commentSort,
         type_: "All",
         saved_only: false,
-        auth,
       }),
+    ]);
+
+    this.setState({
+      postRes,
+      commentsRes,
     });
 
     setupTippy();
@@ -230,25 +234,24 @@ export class Post extends Component<any, PostState> {
   }
 
   static async fetchInitialData({
-    client,
+    headers,
     path,
-    auth,
   }: InitialFetchRequest): Promise<PostData> {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     const pathSplit = path.split("/");
 
     const pathType = pathSplit.at(1);
     const id = pathSplit.at(2) ? Number(pathSplit.at(2)) : undefined;
 
-    const postForm: GetPost = {
-      auth,
-    };
+    const postForm: GetPost = {};
 
     const commentsForm: GetComments = {
       max_depth: commentTreeMaxDepth,
       sort: "Hot",
       type_: "All",
       saved_only: false,
-      auth,
     };
 
     // Set the correct id based on the path type
@@ -260,9 +263,14 @@ export class Post extends Component<any, PostState> {
       commentsForm.parent_id = id;
     }
 
+    const [postRes, commentsRes] = await Promise.all([
+      client.getPost(postForm),
+      client.getComments(commentsForm),
+    ]);
+
     return {
-      postRes: await client.getPost(postForm),
-      commentsRes: await client.getComments(commentsForm),
+      postRes,
+      commentsRes,
     };
   }
 
@@ -386,7 +394,8 @@ export class Post extends Component<any, PostState> {
                 onAddAdmin={this.handleAddAdmin}
                 onTransferCommunity={this.handleTransferCommunity}
                 onFeaturePost={this.handleFeaturePost}
-                onMarkPostAsRead={this.handleMarkPostAsRead}
+                onMarkPostAsRead={() => {}}
+                fediseerFilter={undefined}
               />
               <div ref={this.state.commentSectionRef} className="mb-2" />
 
@@ -588,7 +597,7 @@ export class Post extends Component<any, PostState> {
             onPurgeComment={this.handlePurgeComment}
             onPurgePerson={this.handlePurgePerson}
             onCommentReplyRead={this.handleCommentReplyRead}
-            onPersonMentionRead={this.handlePersonMentionRead}
+            onPersonMentionRead={() => {}}
             onBanPersonFromCommunity={this.handleBanFromCommunity}
             onBanPerson={this.handleBanPerson}
             onCreateComment={this.handleCreateComment}
@@ -675,7 +684,7 @@ export class Post extends Component<any, PostState> {
             onPurgeComment={this.handlePurgeComment}
             onPurgePerson={this.handlePurgePerson}
             onCommentReplyRead={this.handleCommentReplyRead}
-            onPersonMentionRead={this.handlePersonMentionRead}
+            onPersonMentionRead={() => {}}
             onBanPersonFromCommunity={this.handleBanFromCommunity}
             onBanPerson={this.handleBanPerson}
             onCreateComment={this.handleCreateComment}
@@ -701,8 +710,8 @@ export class Post extends Component<any, PostState> {
     i.setState({
       commentSort: event.target.value as CommentSortType,
       commentViewType: CommentViewType.Tree,
-      commentsRes: { state: "loading" },
-      postRes: { state: "loading" },
+      commentsRes: LOADING_REQUEST,
+      postRes: LOADING_REQUEST,
     });
     await i.fetchPost();
   }
@@ -744,6 +753,11 @@ export class Post extends Component<any, PostState> {
   async handleAddModToCommunity(form: AddModToCommunity) {
     const addModRes = await HttpService.client.addModToCommunity(form);
     this.updateModerators(addModRes);
+    if (addModRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(form.added ? "appointed_mod" : "removed_mod"),
+      );
+    }
   }
 
   async handleFollow(form: FollowCommunity) {
@@ -821,7 +835,7 @@ export class Post extends Component<any, PostState> {
 
   async handleEditComment(form: EditComment) {
     const editCommentRes = await HttpService.client.editComment(form);
-    this.findAndUpdateComment(editCommentRes);
+    this.findAndUpdateCommentEdit(editCommentRes);
 
     return editCommentRes;
   }
@@ -829,21 +843,45 @@ export class Post extends Component<any, PostState> {
   async handleDeleteComment(form: DeleteComment) {
     const deleteCommentRes = await HttpService.client.deleteComment(form);
     this.findAndUpdateComment(deleteCommentRes);
+    if (deleteCommentRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(
+          form.deleted ? "deleted_comment" : "undeleted_comment",
+        ),
+      );
+    }
   }
 
   async handleDeletePost(form: DeletePost) {
     const deleteRes = await HttpService.client.deletePost(form);
     this.updatePost(deleteRes);
+    if (deleteRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(form.deleted ? "deleted_post" : "undeleted_post"),
+      );
+    }
   }
 
   async handleRemovePost(form: RemovePost) {
     const removeRes = await HttpService.client.removePost(form);
     this.updatePost(removeRes);
+    if (removeRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(form.removed ? "removed_post" : "restored_post"),
+      );
+    }
   }
 
   async handleRemoveComment(form: RemoveComment) {
     const removeCommentRes = await HttpService.client.removeComment(form);
     this.findAndUpdateComment(removeCommentRes);
+    if (removeCommentRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(
+          form.removed ? "removed_comment" : "restored_comment",
+        ),
+      );
+    }
   }
 
   async handleSaveComment(form: SaveComment) {
@@ -859,6 +897,13 @@ export class Post extends Component<any, PostState> {
   async handleFeaturePost(form: FeaturePost) {
     const featureRes = await HttpService.client.featurePost(form);
     this.updatePost(featureRes);
+    if (featureRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(
+          form.featured ? "featured_post" : "unfeatured_post",
+        ),
+      );
+    }
   }
 
   async handleCommentVote(form: CreateCommentLike) {
@@ -869,11 +914,13 @@ export class Post extends Component<any, PostState> {
   async handlePostVote(form: CreatePostLike) {
     const voteRes = await HttpService.client.likePost(form);
     this.updatePost(voteRes);
+    return voteRes;
   }
 
   async handlePostEdit(form: EditPost) {
     const res = await HttpService.client.editPost(form);
     this.updatePost(res);
+    return res;
   }
 
   async handleCommentReport(form: CreateCommentReport) {
@@ -893,11 +940,25 @@ export class Post extends Component<any, PostState> {
   async handleLockPost(form: LockPost) {
     const lockRes = await HttpService.client.lockPost(form);
     this.updatePost(lockRes);
+    if (lockRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(form.locked ? "locked_post" : "unlocked_post"),
+      );
+    }
   }
 
   async handleDistinguishComment(form: DistinguishComment) {
     const distinguishRes = await HttpService.client.distinguishComment(form);
     this.findAndUpdateComment(distinguishRes);
+    if (distinguishRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(
+          form.distinguished
+            ? "distinguished_comment"
+            : "undistinguished_comment",
+        ),
+      );
+    }
   }
 
   async handleAddAdmin(form: AddAdmin) {
@@ -905,14 +966,19 @@ export class Post extends Component<any, PostState> {
 
     if (addAdminRes.state === "success") {
       this.setState(s => ((s.siteRes.admins = addAdminRes.data.admins), s));
+      toast(
+        I18NextService.i18n.t(form.added ? "appointed_admin" : "removed_admin"),
+      );
     }
   }
 
   async handleTransferCommunity(form: TransferCommunity) {
-    const transferCommunityRes = await HttpService.client.transferCommunity(
-      form,
-    );
+    const transferCommunityRes =
+      await HttpService.client.transferCommunity(form);
     this.updateCommunityFull(transferCommunityRes);
+    if (transferCommunityRes.state === "success") {
+      toast(I18NextService.i18n.t("transferred_community"));
+    }
   }
 
   async handleFetchChildren(form: GetComments) {
@@ -935,24 +1001,35 @@ export class Post extends Component<any, PostState> {
     this.findAndUpdateCommentReply(readRes);
   }
 
-  async handlePersonMentionRead(form: MarkPersonMentionAsRead) {
-    // TODO not sure what to do here. Maybe it is actually optional, because post doesn't need it.
-    await HttpService.client.markPersonMentionAsRead(form);
-  }
-
-  async handleMarkPostAsRead(form: MarkPostAsRead) {
-    const res = await HttpService.client.markPostAsRead(form);
-    this.updatePost(res);
-  }
-
   async handleBanFromCommunity(form: BanFromCommunity) {
     const banRes = await HttpService.client.banFromCommunity(form);
-    this.updateBan(banRes);
+    this.updateBanFromCommunity(banRes);
+    if (banRes.state === "success" && this.state.postRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(
+          form.ban ? "banned_from_community" : "unbanned_from_community",
+          {
+            user: getApubName(banRes.data.person_view.person),
+            community: getApubName(this.state.postRes.data.post_view.community),
+          },
+        ),
+      );
+    }
   }
 
   async handleBanPerson(form: BanPerson) {
     const banRes = await HttpService.client.banPerson(form);
     this.updateBan(banRes);
+    if (banRes.state === "success" && this.state.postRes.state === "success") {
+      toast(
+        I18NextService.i18n.t(
+          form.ban ? "banned_from_site" : "unbanned_from_site",
+          {
+            user: getApubName(banRes.data.person_view.person),
+          },
+        ),
+      );
+    }
   }
 
   updateBanFromCommunity(banRes: RequestState<BanFromCommunityResponse>) {
@@ -1028,7 +1105,7 @@ export class Post extends Component<any, PostState> {
     });
   }
 
-  purgeItem(purgeRes: RequestState<PurgeItemResponse>) {
+  purgeItem(purgeRes: RequestState<SuccessResponse>) {
     if (purgeRes.state === "success") {
       toast(I18NextService.i18n.t("purge_success"));
       this.context.router.history.push(`/`);
@@ -1058,7 +1135,7 @@ export class Post extends Component<any, PostState> {
     });
   }
 
-  findAndUpdateComment(res: RequestState<CommentResponse>) {
+  findAndUpdateCommentEdit(res: RequestState<CommentResponse>) {
     this.setState(s => {
       if (s.commentsRes.state === "success" && res.state === "success") {
         s.commentsRes.data.comments = editComment(
@@ -1066,6 +1143,19 @@ export class Post extends Component<any, PostState> {
           s.commentsRes.data.comments,
         );
         s.finished.set(res.data.comment_view.comment.id, true);
+      }
+      return s;
+    });
+  }
+
+  // No need to set finished on a comment vote, save, etc
+  findAndUpdateComment(res: RequestState<CommentResponse>) {
+    this.setState(s => {
+      if (s.commentsRes.state === "success" && res.state === "success") {
+        s.commentsRes.data.comments = editComment(
+          res.data.comment_view,
+          s.commentsRes.data.comments,
+        );
       }
       return s;
     });

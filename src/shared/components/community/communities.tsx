@@ -1,10 +1,4 @@
-import {
-  editCommunity,
-  myAuth,
-  myAuthRequired,
-  setIsoData,
-  showLocal,
-} from "@utils/app";
+import { editCommunity, setIsoData, showLocal } from "@utils/app";
 import {
   getPageFromString,
   getQueryParams,
@@ -17,6 +11,7 @@ import { Component, linkEvent } from "inferno";
 import {
   CommunityResponse,
   GetSiteResponse,
+  LemmyHttp,
   ListCommunities,
   ListCommunitiesResponse,
   ListingType,
@@ -24,7 +19,13 @@ import {
 } from "lemmy-js-client";
 import { InitialFetchRequest } from "../../interfaces";
 import { FirstLoadService, I18NextService } from "../../services";
-import { HttpService, RequestState } from "../../services/HttpService";
+import {
+  EMPTY_REQUEST,
+  HttpService,
+  LOADING_REQUEST,
+  RequestState,
+  wrapClient,
+} from "../../services/HttpService";
 import { HtmlTags } from "../common/html-tags";
 import { Spinner } from "../common/icon";
 import { ListingTypeSelect } from "../common/listing-type-select";
@@ -33,6 +34,8 @@ import { SortSelect } from "../common/sort-select";
 import { CommunityLink } from "./community-link";
 
 import { communityLimit } from "../../config";
+import { SubscribeButton } from "../common/subscribe-button";
+import { getHttpBaseInternal } from "../../utils/env";
 
 type CommunitiesData = RouteDataResponse<{
   listCommunitiesResponse: ListCommunitiesResponse;
@@ -69,7 +72,7 @@ function getCommunitiesQueryParams() {
 export class Communities extends Component<any, CommunitiesState> {
   private isoData = setIsoData<CommunitiesData>(this.context);
   state: CommunitiesState = {
-    listCommunitiesResponse: { state: "empty" },
+    listCommunitiesResponse: EMPTY_REQUEST,
     siteRes: this.isoData.site_res,
     searchText: "",
     isIsomorphic: false,
@@ -179,41 +182,26 @@ export class Communities extends Component<any, CommunitiesState> {
                           {numToSI(cv.counts.comments)}
                         </td>
                         <td className="text-right">
-                          {cv.subscribed === "Subscribed" && (
-                            <button
-                              className="btn btn-link d-inline-block"
-                              onClick={linkEvent(
-                                {
-                                  i: this,
-                                  communityId: cv.community.id,
-                                  follow: false,
-                                },
-                                this.handleFollow,
-                              )}
-                            >
-                              {I18NextService.i18n.t("unsubscribe")}
-                            </button>
-                          )}
-                          {cv.subscribed === "NotSubscribed" && (
-                            <button
-                              className="btn btn-link d-inline-block"
-                              onClick={linkEvent(
-                                {
-                                  i: this,
-                                  communityId: cv.community.id,
-                                  follow: true,
-                                },
-                                this.handleFollow,
-                              )}
-                            >
-                              {I18NextService.i18n.t("subscribe")}
-                            </button>
-                          )}
-                          {cv.subscribed === "Pending" && (
-                            <div className="text-warning d-inline-block">
-                              {I18NextService.i18n.t("subscribe_pending")}
-                            </div>
-                          )}
+                          <SubscribeButton
+                            communityView={cv}
+                            onFollow={linkEvent(
+                              {
+                                i: this,
+                                communityId: cv.community.id,
+                                follow: true,
+                              },
+                              this.handleFollow,
+                            )}
+                            onUnFollow={linkEvent(
+                              {
+                                i: this,
+                                communityId: cv.community.id,
+                                follow: false,
+                              },
+                              this.handleFollow,
+                            )}
+                            isLink
+                          />
                         </td>
                       </tr>
                     ),
@@ -321,24 +309,24 @@ export class Communities extends Component<any, CommunitiesState> {
   }
 
   static async fetchInitialData({
+    headers,
     query: { listingType, sort, page },
-    client,
-    auth,
   }: InitialFetchRequest<
     QueryParams<CommunitiesProps>
   >): Promise<CommunitiesData> {
+    const client = wrapClient(
+      new LemmyHttp(getHttpBaseInternal(), { headers }),
+    );
     const listCommunitiesForm: ListCommunities = {
       type_: getListingTypeFromQuery(listingType),
       sort: getSortTypeFromQuery(sort),
       limit: communityLimit,
       page: getPageFromString(page),
-      auth: auth,
     };
 
     return {
-      listCommunitiesResponse: await client.listCommunities(
-        listCommunitiesForm,
-      ),
+      listCommunitiesResponse:
+        await client.listCommunities(listCommunitiesForm),
     };
   }
 
@@ -350,13 +338,12 @@ export class Communities extends Component<any, CommunitiesState> {
     const res = await HttpService.client.followCommunity({
       community_id: data.communityId,
       follow: data.follow,
-      auth: myAuthRequired(),
     });
     data.i.findAndUpdateCommunity(res);
   }
 
   async refetch() {
-    this.setState({ listCommunitiesResponse: { state: "loading" } });
+    this.setState({ listCommunitiesResponse: LOADING_REQUEST });
 
     const { listingType, sort, page } = getCommunitiesQueryParams();
 
@@ -366,7 +353,6 @@ export class Communities extends Component<any, CommunitiesState> {
         sort: sort,
         limit: communityLimit,
         page,
-        auth: myAuth(),
       }),
     });
 

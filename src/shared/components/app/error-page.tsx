@@ -1,5 +1,4 @@
 import { setIsoData } from "@utils/app";
-import { removeAuthParam } from "@utils/helpers";
 import { Component } from "inferno";
 import { T } from "inferno-i18next-dess";
 import { IsoDataOptionalSite } from "../../interfaces";
@@ -50,11 +49,7 @@ export class ErrorPage extends Component<any, any> {
 
         {/* ERROR MESSAGE IF NOT 404 */}
         {!NOT_FOUND && errorPageData?.error && (
-          <T
-            i18nKey="error_code_message"
-            parent="p"
-            interpolation={{ error: removeAuthParam(errorPageData.error) }}
-          >
+          <T i18nKey="error_code_message" parent="p">
             #<strong className="text-danger">#</strong>#
           </T>
         )}
