@@ -1,4 +1,4 @@
-import { myAuthRequired, newVote, showScores } from "@utils/app";
+import { newVote, showScores } from "@utils/app";
 import { numToSI } from "@utils/helpers";
 import classNames from "classnames";
 import { Component, linkEvent } from "inferno";
@@ -9,7 +9,7 @@ import {
   PostAggregates,
 } from "lemmy-js-client";
 import { VoteContentType, VoteType } from "../../interfaces";
-import { I18NextService } from "../../services";
+import { I18NextService, UserService } from "../../services";
 import { Icon, Spinner } from "../common/icon";
 
 interface VoteButtonsProps {
@@ -53,7 +53,6 @@ const handleUpvote = (i: VoteButtons) => {
       i.props.onVote({
         comment_id: i.props.id,
         score: newVote(VoteType.Upvote, i.props.my_vote),
-        auth: myAuthRequired(),
       });
       break;
     case VoteContentType.Post:
@@ -61,7 +60,6 @@ const handleUpvote = (i: VoteButtons) => {
       i.props.onVote({
         post_id: i.props.id,
         score: newVote(VoteType.Upvote, i.props.my_vote),
-        auth: myAuthRequired(),
       });
   }
 };
@@ -73,7 +71,6 @@ const handleDownvote = (i: VoteButtons) => {
       i.props.onVote({
         comment_id: i.props.id,
         score: newVote(VoteType.Downvote, i.props.my_vote),
-        auth: myAuthRequired(),
       });
       break;
     case VoteContentType.Post:
@@ -81,7 +78,6 @@ const handleDownvote = (i: VoteButtons) => {
       i.props.onVote({
         post_id: i.props.id,
         score: newVote(VoteType.Downvote, i.props.my_vote),
-        auth: myAuthRequired(),
       });
   }
 };
@@ -117,6 +113,7 @@ export class VoteButtonsCompact extends Component<
             this.props.my_vote === 1 ? "text-info" : "text-muted"
           }`}
           data-tippy-content={tippy(this.props.counts)}
+          disabled={!UserService.Instance.myUserInfo}
           onClick={linkEvent(this, handleUpvote)}
           aria-label={I18NextService.i18n.t("upvote")}
           aria-pressed={this.props.my_vote === 1}
@@ -140,6 +137,7 @@ export class VoteButtonsCompact extends Component<
             className={`ms-2 btn btn-sm btn-link btn-animate btn py-0 px-1 ${
               this.props.my_vote === -1 ? "text-danger" : "text-muted"
             }`}
+            disabled={!UserService.Instance.myUserInfo}
             onClick={linkEvent(this, handleDownvote)}
             data-tippy-content={tippy(this.props.counts)}
             aria-label={I18NextService.i18n.t("downvote")}
@@ -195,6 +193,7 @@ export class VoteButtons extends Component<VoteButtonsProps, VoteButtonsState> {
           className={`btn-animate btn btn-link p-0 ${
             this.props.my_vote === 1 ? "text-info" : "text-muted"
           }`}
+          disabled={!UserService.Instance.myUserInfo}
           onClick={linkEvent(this, handleUpvote)}
           data-tippy-content={I18NextService.i18n.t("upvote")}
           aria-label={I18NextService.i18n.t("upvote")}
@@ -222,6 +221,7 @@ export class VoteButtons extends Component<VoteButtonsProps, VoteButtonsState> {
             className={`btn-animate btn btn-link p-0 ${
               this.props.my_vote === -1 ? "text-danger" : "text-muted"
             }`}
+            disabled={!UserService.Instance.myUserInfo}
             onClick={linkEvent(this, handleDownvote)}
             data-tippy-content={I18NextService.i18n.t("downvote")}
             aria-label={I18NextService.i18n.t("downvote")}
