@@ -1,7 +1,7 @@
 {
   "name": "kaleidoscope",
   "version": "0.19.0",
-  "description": "An enhanced fork of the lemmy-ui, curated by the Based Count team ",
+  "description": "An enhanced fork of the lemmy-ui, curated by the Based Count team.",
   "repository": "https://github.com/basedcount/kaleidoscope",
   "license": "AGPL-3.0",
   "author": "ornato-t",

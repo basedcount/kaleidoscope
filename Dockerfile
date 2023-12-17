@@ -65,10 +65,10 @@ RUN chmod +x /app/inject-env.sh
 
 RUN chown -R node:node /app
 
-LABEL org.opencontainers.image.authors="The Lemmy Authors"
-LABEL org.opencontainers.image.source="https://github.com/LemmyNet/lemmy-ui"
+LABEL org.opencontainers.image.authors="ornato-t"
+LABEL org.opencontainers.image.source="https://github.com/basedcount/kaleidoscope"
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
-LABEL org.opencontainers.image.description="The official web app for Lemmy."
+LABEL org.opencontainers.image.description="An enhanced fork of the lemmy-ui, curated by the Based Count team."
 
 HEALTHCHECK --interval=60s --start-period=10s --retries=2 --timeout=10s CMD curl -ILfSs http://localhost:1234/ > /dev/null || exit 1
 
