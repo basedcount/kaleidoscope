@@ -134,23 +134,24 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
     this.handlePurgePost = this.handlePurgePost.bind(this);
   }
 
-  componentDidMount(): void {
-    if (UserService.Instance.myUserInfo) {
-      this.setState({
-        imageExpanded:
-          UserService.Instance.myUserInfo.local_user_view.local_user
-            .auto_expand,
-      });
-    }
-  }
-
   get postView(): PostView {
     return this.props.post_view;
   }
 
   async componentDidMount() {
     await EnvVars.setEnvVars();
-    this.setState({ fediseer: await EnvVars.FEDISEER });
+
+    if (UserService.Instance.myUserInfo) {
+      this.setState({
+        fediseer: await EnvVars.FEDISEER,
+        imageExpanded:
+          UserService.Instance.myUserInfo.local_user_view.local_user
+            .auto_expand,
+      });
+    } else {
+      this.setState({ fediseer: await EnvVars.FEDISEER });
+    }
+
   }
 
   render() {
@@ -375,12 +376,12 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
       <div className="small mb-1 mb-md-0">
         <PersonListing person={pv.creator} />
 
-        
+
         <FetchUserFlair
-            userFlair={getUserFlair(pv.creator, pv.community)}
-            classNames="pb-1 mx-1"
-          />
-          
+          userFlair={getUserFlair(pv.creator, pv.community)}
+          classNames="pb-1 mx-1"
+        />
+
         <UserBadges
           classNames="ms-1"
           isMod={pv.creator_is_moderator}
@@ -403,7 +404,7 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
             }
           </span>
         )}
-        <FediseerIcon fediseer={this.state.fediseer} instance={pv.community.actor_id}/>
+        <FediseerIcon fediseer={this.state.fediseer} instance={pv.community.actor_id} />
         {" "}• <MomentTime published={pv.post.published} updated={pv.post.updated} />
       </div>
     );
@@ -413,11 +414,10 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
     const post = this.postView.post;
     return (
       <Link
-        className={`d-inline ${
-          !post.featured_community && !post.featured_local
-            ? "link-dark"
-            : "link-primary"
-        }`}
+        className={`d-inline ${!post.featured_community && !post.featured_local
+          ? "link-dark"
+          : "link-primary"
+          }`}
         to={`/post/${post.id}`}
         title={I18NextService.i18n.t("comments")}
       >
@@ -646,7 +646,7 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
       .open_links_in_new_tab
       ? "_blank"
       : // _self is the default target on links when the field is not specified
-        "_self";
+      "_self";
   }
 
   get commentsButton() {
@@ -857,9 +857,8 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
     const body = post.body;
 
     return body
-      ? `${I18NextService.i18n.t("cross_posted_from")} ${
-          post.ap_id
-        }\n\n${body.replace(/^/gm, "> ")}`
+      ? `${I18NextService.i18n.t("cross_posted_from")} ${post.ap_id
+      }\n\n${body.replace(/^/gm, "> ")}`
       : undefined;
   }
 

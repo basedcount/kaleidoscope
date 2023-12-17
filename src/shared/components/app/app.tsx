@@ -23,7 +23,7 @@ interface AppState {
   gitRepository?: string;
 }
 
-export class App extends Component<AppProps, AppState> {
+export class App extends Component<any, AppState> {
   private isoData: IsoDataOptionalSite = setIsoData(this.context);
   private readonly mainContentRef: RefObject<HTMLElement>;
   constructor(props: any, context: any) {
@@ -41,8 +41,6 @@ export class App extends Component<AppProps, AppState> {
     await EnvVars.setEnvVars();
     this.setState({ donationUrl: EnvVars.DONATION_URL, discordUrl: EnvVars.DISCORD_URL, gitRepository: EnvVars.GIT_REPOSITORY, })
   }
-
-  user = UserService.Instance.myUserInfo;
 
   render() {
     const siteRes = this.isoData.site_res;

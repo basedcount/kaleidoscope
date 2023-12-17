@@ -721,6 +721,7 @@ export class Search extends Component<any, SearchState> {
                   onAddAdmin={async () => {}}
                   onTransferCommunity={async () => {}}
                   onMarkPostAsRead={async () => {}}
+                  fediseerFilter={undefined}
                 />
               )}
               {i.type_ === "comments" && (
@@ -872,6 +873,7 @@ export class Search extends Component<any, SearchState> {
                 onAddAdmin={async () => {}}
                 onTransferCommunity={async () => {}}
                 onMarkPostAsRead={() => {}}
+                fediseerFilter={undefined}
               />
             </div>
           </div>

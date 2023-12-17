@@ -102,6 +102,7 @@ export class CommentReport extends Component<
           onBanPerson={async () => {}}
           onCreateComment={async () => Promise.resolve(EMPTY_REQUEST)}
           onEditComment={() => Promise.resolve(EMPTY_REQUEST)}
+          fediseerFilter="disabled" //This is set as disabled because reports should always be visible
         />
         <div>
           {I18NextService.i18n.t("reporter")}:{" "}

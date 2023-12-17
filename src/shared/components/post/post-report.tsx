@@ -90,6 +90,7 @@ export class PostReport extends Component<PostReportProps, PostReportState> {
           onAddAdmin={async () => {}}
           onTransferCommunity={async () => {}}
           onMarkPostAsRead={async () => {}}
+          fediseerFilter="disabled" //This is always set as disabled because reports should always be visible
         />
         <div>
           {I18NextService.i18n.t("reporter")}:{" "}

@@ -395,6 +395,7 @@ export class Post extends Component<any, PostState> {
                 onTransferCommunity={this.handleTransferCommunity}
                 onFeaturePost={this.handleFeaturePost}
                 onMarkPostAsRead={() => {}}
+                fediseerFilter={undefined}
               />
               <div ref={this.state.commentSectionRef} className="mb-2" />
 

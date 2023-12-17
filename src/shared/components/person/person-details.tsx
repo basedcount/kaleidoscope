@@ -215,6 +215,7 @@ export class PersonDetails extends Component<PersonDetailsProps, any> {
             onAddAdmin={this.props.onAddAdmin}
             onTransferCommunity={this.props.onTransferCommunity}
             onMarkPostAsRead={this.props.onMarkPostAsRead}
+            fediseerFilter={undefined}
           />
         );
       }
@@ -327,6 +328,7 @@ export class PersonDetails extends Component<PersonDetailsProps, any> {
               onAddAdmin={this.props.onAddAdmin}
               onTransferCommunity={this.props.onTransferCommunity}
               onMarkPostAsRead={this.props.onMarkPostAsRead}
+              fediseerFilter={undefined}
             />
             <hr className="my-3" />
           </>

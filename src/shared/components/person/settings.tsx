@@ -219,7 +219,7 @@ export class Settings extends Component<any, SettingsState> {
     searchPersonLoading: false,
     searchPersonOptions: [],
     fediseerKey: this.getFediseerKeyInitialValue(),
-    fediseerFilter: this.getFediseerFilterInitialValue()
+    fediseerFilter: this.getFediseerFilterInitialValue(),
     searchInstanceOptions: [],
     isIsomorphic: false,
     generateTotpRes: EMPTY_REQUEST,
