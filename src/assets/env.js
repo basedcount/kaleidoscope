@@ -1,6 +1,6 @@
 export const ENV = {
     ENABLE_USER_FLAIRS: 'true',
-    ENABLE_FEDISEER: 'false',
+    ENABLE_FEDISEER: 'true',
     DISCORD_URL: '',
     DONATION_URL: '',
     GIT_REPOSITORY: 'https://github.com/basedcount/kaleidoscope',

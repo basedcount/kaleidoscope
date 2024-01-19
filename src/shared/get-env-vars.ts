@@ -20,7 +20,7 @@ export const EnvVars = {
 } satisfies EnvVarsType;
 
 //Fetches the blocklist and censure list from the Fediseer API
-export async function getFediseerData() {
+export async function getFediseerData(): Promise<Fediseer | null> {
   const enabled = EnvVars.ENABLE_FEDISEER;
   const domain = EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST;
 
@@ -49,4 +49,10 @@ export async function getFediseerData() {
 
     return json.domains;
   }
+}
+
+interface Fediseer {
+  endorsements: string[];
+  hesitations: string[];
+  censures: string[];
 }
