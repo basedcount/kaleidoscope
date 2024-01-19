@@ -35,13 +35,7 @@ export class App extends Component<any, AppState> {
     event.preventDefault();
     this.mainContentRef.current?.focus();
   }
-
-  // Fetch env vars from backend - don't send secrets this way, this is all public stuff
-  async componentDidMount() {
-    await EnvVars.setEnvVars();
-    this.setState({ donationUrl: EnvVars.DONATION_URL, discordUrl: EnvVars.DISCORD_URL, gitRepository: EnvVars.GIT_REPOSITORY, })
-  }
-
+  
   render() {
     const siteRes = this.isoData.site_res;
     const siteView = siteRes?.site_view;
@@ -67,7 +61,7 @@ export class App extends Component<any, AppState> {
                 <CodeTheme />
               </>
             )}
-            <Navbar siteRes={siteRes} donationUrl={this.state?.donationUrl} />
+            <Navbar siteRes={siteRes} donationUrl={EnvVars.DONATION_URL} />
             <div className="mt-4 p-0 fl-1">
               <Switch>
                 {routes.map(
@@ -106,7 +100,7 @@ export class App extends Component<any, AppState> {
                 <Route component={ErrorPage} />
               </Switch>
             </div>
-            <Footer site={siteRes} gitRepository={this.state?.gitRepository} discordUrl={this.state?.discordUrl} />
+            <Footer site={siteRes} gitRepository={EnvVars.GIT_REPOSITORY} discordUrl={EnvVars.GIT_REPOSITORY} />
           </div>
         </Provider>
       </>

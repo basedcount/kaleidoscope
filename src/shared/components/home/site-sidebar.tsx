@@ -35,7 +35,6 @@ export class SiteSidebar extends Component<SiteSidebarProps, SiteSidebarState> {
   }
 
   async componentDidMount() {
-    await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_FEDISEER) return;
 
     const url = `${fediseerApi}/v1/whitelist/${this.domain}`; //Request to the Fediseer API

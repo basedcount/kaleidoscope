@@ -22,7 +22,7 @@ import {
   numToSI,
   randomStr,
 } from "@utils/helpers";
-import { amAdmin, canMod, isAdmin, isBanned } from "@utils/roles";
+import { amAdmin, canMod, isBanned } from "@utils/roles";
 import type { QueryParams } from "@utils/types";
 import { RouteDataResponse } from "@utils/types";
 import classNames from "classnames";
@@ -248,7 +248,6 @@ export class Profile extends Component<
       await this.fetchUserData();
     }
     setupTippy();
-    await EnvVars.setEnvVars();
   }
 
   componentWillUnmount() {

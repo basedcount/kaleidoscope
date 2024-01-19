@@ -234,8 +234,6 @@ export class Community extends Component<
     }
 
     setupTippy();
-
-    await EnvVars.setEnvVars();
   }
 
   static async fetchInitialData({

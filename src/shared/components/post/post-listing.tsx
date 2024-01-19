@@ -51,7 +51,7 @@ import { CrossPostParams } from "@utils/types";
 import { RequestState } from "../../services/HttpService";
 import { getUserFlair } from "@utils/helpers/user-flair-type";
 import { FetchUserFlair } from "../common/user-flair";
-import { EnvVars } from "../../get-env-vars";
+import { getFediseerData } from "../../get-env-vars";
 import { FediseerIcon } from "../fediseer-icon";
 import { fediseerFilter } from "@utils/fediseer-feed-filter";
 
@@ -139,17 +139,17 @@ export class PostListing extends Component<PostListingProps, PostListingState> {
   }
 
   async componentDidMount() {
-    await EnvVars.setEnvVars();
+    const fediseer = await getFediseerData();
 
     if (UserService.Instance.myUserInfo) {
       const { auto_expand, blur_nsfw } =
         UserService.Instance.myUserInfo.local_user_view.local_user;
       this.setState({
-        fediseer: await EnvVars.FEDISEER,
+        fediseer: fediseer,
         imageExpanded: auto_expand && !(blur_nsfw && this.postView.post.nsfw),
       });
     } else {
-      this.setState({ fediseer: await EnvVars.FEDISEER });
+      this.setState({ fediseer: fediseer });
     }
 
   }

@@ -331,8 +331,6 @@ export class Settings extends Component<any, SettingsState> {
     setupTippy();
     this.setState({ themeList: await fetchThemeList() });
 
-    await EnvVars.setEnvVars();
-
     if (!this.state.isIsomorphic) {
       this.setState({
         instancesRes: LOADING_REQUEST,

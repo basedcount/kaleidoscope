@@ -58,7 +58,7 @@ import CommentActionDropdown from "../common/content-actions/comment-action-drop
 import { RequestState } from "../../services/HttpService";
 import { getUserFlair } from "@utils/helpers/user-flair-type";
 import { FetchUserFlair } from "../common/user-flair";
-import { EnvVars } from "../../get-env-vars";
+import { getFediseerData } from "../../get-env-vars";
 import { FediseerIcon } from "../fediseer-icon";
 import { fediseerFilter } from "@utils/fediseer-feed-filter";
 
@@ -190,8 +190,9 @@ export class CommentNode extends Component<CommentNodeProps, CommentNodeState> {
   }
 
   async componentDidMount() {
-    await EnvVars.setEnvVars();
-    this.setState({ fediseer: await EnvVars.FEDISEER });
+    const fediseer = await getFediseerData();
+
+    this.setState({ fediseer: fediseer });
   }
 
   render() {

@@ -13,7 +13,6 @@ export interface UserFlairType {
 
 export async function getUserFlair(user: Person | undefined, community: Community): Promise<UserFlairType | null> {
   try {
-    await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_USER_FLAIRS) return null;
 
     if (!community.local) return null;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
@@ -31,7 +30,6 @@ export async function getUserFlair(user: Person | undefined, community: Communit
 
 export async function setUserFlair(user: Person, community: Community, newUserFlair: UserFlairType) {
   try {
-    await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_USER_FLAIRS) return;
 
     if (!community.local) return;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
@@ -58,7 +56,6 @@ export async function setUserFlair(user: Person, community: Community, newUserFl
 
 export async function clearUserFlair(user: Person, community: Community) {
   try {
-    await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_USER_FLAIRS) return;
 
     if (!community.local) return;  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
@@ -83,7 +80,6 @@ export async function clearUserFlair(user: Person, community: Community) {
 
 export async function getUserFlairList(requester: Person | undefined, moderators: CommunityModeratorView[], community: Community): Promise<UserFlairType[]> {
   try {
-    await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_USER_FLAIRS) return [];
 
     if (!community.local) return [];  //Flairs are only fetched for local communities (we assume other instances won't be running Kaleidoscope)
@@ -115,7 +111,6 @@ export async function getUserFlairList(requester: Person | undefined, moderators
 
 export async function modAddFlair(flair: UserFlairType) {
   try {
-    await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_USER_FLAIRS) return;
 
     await fetch(`${getFlairsUrl()}/api/v1/community`, {
@@ -141,7 +136,6 @@ export async function modAddFlair(flair: UserFlairType) {
 
 export async function modDeleteFlair(flair: UserFlairType) {
   try {
-    await EnvVars.setEnvVars();
     if (!EnvVars.ENABLE_USER_FLAIRS) return;
 
     await fetch(`${getFlairsUrl()}/api/v1/community`, {
