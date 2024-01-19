@@ -21,6 +21,7 @@ export const EnvVars = {
 
 //Fetches the blocklist and censure list from the Fediseer API
 export async function getFediseerData(): Promise<Fediseer | null> {
+  return null;  //TEMP - going to have to actually remove this in the future
   const enabled = EnvVars.ENABLE_FEDISEER;
   const domain = EnvVars.LEMMY_UI_LEMMY_EXTERNAL_HOST;
 
